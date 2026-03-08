@@ -17,6 +17,8 @@ import { pollVelocityMonitor } from './services/velocityMonitor.js';
 const app = express();
 const PORT = Number(process.env.PORT || 3001);
 const DISABLE_VELOCITY_POLLING = process.env.DISABLE_VELOCITY_POLLING === 'true';
+const ENABLE_DEV_ROUTES = process.env.ENABLE_DEV_ROUTES === 'true';
+const NODE_ENV = process.env.NODE_ENV || 'development';
 
 app.use(express.json({ limit: '10mb' }));
 
@@ -29,8 +31,11 @@ app.use('/api/velocity', velocityRouter);
 app.use('/api/setups', setupsRouter);
 app.use('/api/fx-setup', fxSetupRouter);
 app.use('/api/ai-status', aiStatusRouter);
-app.use('/api/dev/mock-market', devMockMarketRouter);
 app.use('/api/market-state', marketStateRouter);
+
+if (ENABLE_DEV_ROUTES || NODE_ENV !== 'production') {
+  app.use('/api/dev/mock-market', devMockMarketRouter);
+}
 
 app.get('/api/health', (_req, res) => {
   res.json({ status: 'ok', timestamp: Date.now() });

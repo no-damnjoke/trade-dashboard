@@ -17,7 +17,7 @@
     "tunnel": "cloudflared tunnel --url http://localhost:5173",
     "dev:remote": "concurrently -k -n fe,be,tunnel -c cyan,green,magenta \"vite\" \"tsx watch --env-file=.env server/index.ts\" \"cloudflared tunnel --url http://localhost:5173\"",
     "build": "tsc -b && vite build",
-    "start": "node --import tsx server/index.ts",
+    "start": "node --env-file-if-exists=.env --import tsx server/index.ts",
     "preview": "vite preview"
   },
   "dependencies": {
