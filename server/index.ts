@@ -1,3 +1,5 @@
+import path from 'node:path';
+import { fileURLToPath } from 'node:url';
 import express from 'express';
 import { headlinesRouter } from './routes/headlines.js';
 import { heatmapRouter } from './routes/heatmap.js';
@@ -32,6 +34,14 @@ app.use('/api/market-state', marketStateRouter);
 
 app.get('/api/health', (_req, res) => {
   res.json({ status: 'ok', timestamp: Date.now() });
+});
+
+// Serve built frontend in production
+const __dirname = path.dirname(fileURLToPath(import.meta.url));
+const distPath = path.join(__dirname, '..', 'dist');
+app.use(express.static(distPath));
+app.get('*', (_req, res) => {
+  res.sendFile(path.join(distPath, 'index.html'));
 });
 
 if (!DISABLE_VELOCITY_POLLING) {
