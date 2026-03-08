@@ -19,7 +19,9 @@ const PORT = Number(process.env.PORT || 3001);
 const DISABLE_VELOCITY_POLLING = process.env.DISABLE_VELOCITY_POLLING === 'true';
 const ENABLE_DEV_ROUTES = process.env.ENABLE_DEV_ROUTES === 'true';
 const NODE_ENV = process.env.NODE_ENV || 'development';
+const HOST = process.env.HOST || (NODE_ENV === 'production' ? '127.0.0.1' : '0.0.0.0');
 
+app.disable('x-powered-by');
 app.use(express.json({ limit: '10mb' }));
 
 app.use('/api/headlines', headlinesRouter);
@@ -56,6 +58,6 @@ if (!DISABLE_VELOCITY_POLLING) {
   }, 30_000);
 }
 
-app.listen(PORT, () => {
-  console.log(`[BE] Market Monitor backend running on http://localhost:${PORT}`);
+app.listen(PORT, HOST, () => {
+  console.log(`[BE] Market Monitor backend running on http://${HOST}:${PORT}`);
 });
