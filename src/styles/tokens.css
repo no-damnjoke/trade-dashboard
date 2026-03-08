@@ -1,0 +1,88 @@
+:root {
+  /* === Backgrounds === */
+  --bg-app:        #0a0a0f;
+  --bg-panel:      #111118;
+  --bg-elevated:   #1a1a24;
+  --bg-hover:      #1f1f2c;
+  --bg-active:     #262636;
+
+  /* === Borders === */
+  --border:        #1c1c28;
+  --border-subtle: #151520;
+  --border-focus:  #3b82f6;
+
+  /* === Text === */
+  --text-primary:   #e0e0e8;
+  --text-secondary: #8888a0;
+  --text-muted:     #555568;
+  --text-inverse:   #0a0a0f;
+
+  /* === Semantic === */
+  --positive:  #22c55e;
+  --negative:  #ef4444;
+  --warning:   #f59e0b;
+  --info:      #3b82f6;
+  --accent:    #3b82f6;
+
+  /* === Heatmap gradient stops === */
+  --heat-neg-strong: #dc2626;
+  --heat-neg:        #ef4444;
+  --heat-neg-light:  #7f1d1d;
+  --heat-neutral:    #1f1f2c;
+  --heat-pos-light:  #14532d;
+  --heat-pos:        #22c55e;
+  --heat-pos-strong: #16a34a;
+
+  /* === Source chips === */
+  --chip-firstsquawk: #1a3c5e;
+  --chip-polymarket:  #4a2d6f;
+
+  /* === Typography === */
+  --font-sans: 'Inter', -apple-system, BlinkMacSystemFont, system-ui, sans-serif;
+  --font-mono: 'JetBrains Mono', 'SF Mono', 'Cascadia Code', monospace;
+
+  --text-xs:   0.6875rem;  /* 11px */
+  --text-sm:   0.75rem;    /* 12px */
+  --text-base: 0.8125rem;  /* 13px */
+  --text-md:   0.875rem;   /* 14px */
+  --text-lg:   1rem;       /* 16px */
+  --text-xl:   1.25rem;    /* 20px */
+
+  --weight-normal: 400;
+  --weight-medium: 500;
+  --weight-bold:   600;
+
+  --leading-tight:  1.2;
+  --leading-normal: 1.4;
+
+  /* === Spacing (4px base) === */
+  --sp-1: 4px;
+  --sp-2: 8px;
+  --sp-3: 12px;
+  --sp-4: 16px;
+  --sp-5: 20px;
+  --sp-6: 24px;
+  --sp-8: 32px;
+
+  /* === Layout === */
+  --header-h: 40px;
+  --heatmap-h: 48px;
+  --status-h: 28px;
+  --panel-header-h: 28px;
+  --panel-pad: 8px;
+
+  /* === Transitions === */
+  --fast: 100ms ease;
+  --normal: 200ms ease;
+
+  /* === Z-index === */
+  --z-panel: 1;
+  --z-header: 10;
+  --z-status: 10;
+  --z-toast: 50;
+  --z-palette: 100;
+
+  /* === Radius === */
+  --radius-sm: 3px;
+  --radius-md: 6px;
+}

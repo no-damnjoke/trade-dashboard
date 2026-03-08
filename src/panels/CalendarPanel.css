@@ -1,0 +1,19 @@
+.calendar-widget {
+  width: 100%;
+  height: 100%;
+}
+
+.calendar-widget .tradingview-widget-container {
+  width: 100% !important;
+  height: 100% !important;
+}
+
+.calendar-widget .tradingview-widget-container__widget {
+  width: 100% !important;
+  height: 100% !important;
+}
+
+.calendar-widget iframe {
+  width: 100% !important;
+  height: 100% !important;
+}

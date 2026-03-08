@@ -1,0 +1,115 @@
+.header {
+  height: var(--header-h);
+  background: var(--bg-panel);
+  border-bottom: 1px solid var(--border);
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0 var(--sp-4);
+  z-index: var(--z-header);
+}
+
+.header__left {
+  display: flex;
+  align-items: center;
+  gap: var(--sp-4);
+}
+
+.header__logo {
+  font-size: var(--text-md);
+  font-weight: var(--weight-bold);
+  letter-spacing: 0.12em;
+  color: var(--text-primary);
+}
+
+.header__live {
+  display: flex;
+  align-items: center;
+  gap: var(--sp-1);
+  font-size: var(--text-xs);
+  font-weight: var(--weight-medium);
+  color: var(--positive);
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+}
+
+.header__dot {
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: var(--positive);
+  animation: pulse 2s ease-in-out infinite;
+}
+
+.header__right {
+  display: flex;
+  align-items: center;
+  gap: var(--sp-3);
+}
+
+.header__clock {
+  font-size: var(--text-sm);
+  color: var(--text-secondary);
+}
+
+.header__btn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 28px;
+  height: 28px;
+  border-radius: var(--radius-sm);
+  color: var(--text-secondary);
+  font-size: var(--text-sm);
+  transition: background var(--fast), color var(--fast);
+}
+.header__btn:hover {
+  background: var(--bg-hover);
+  color: var(--text-primary);
+}
+.header__btn kbd {
+  font-family: var(--font-mono);
+  font-size: var(--text-xs);
+}
+
+.header__alert-btn {
+  position: relative;
+}
+
+.header__alert-count {
+  position: absolute;
+  top: 2px;
+  right: 2px;
+  width: 14px;
+  height: 14px;
+  border-radius: 50%;
+  background: var(--negative);
+  color: white;
+  font-size: 9px;
+  font-weight: var(--weight-bold);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+@media (max-width: 768px) {
+  .header {
+    padding: 0 var(--sp-2);
+  }
+
+  .header__left {
+    gap: var(--sp-2);
+  }
+
+  .header__logo {
+    font-size: var(--text-sm);
+  }
+
+  .header__clock {
+    display: none;
+  }
+
+  .header__btn kbd {
+    display: none;
+  }
+}

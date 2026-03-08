@@ -1,0 +1,114 @@
+.alerts-drawer__backdrop {
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.25);
+  z-index: 40;
+}
+
+.alerts-drawer {
+  position: absolute;
+  top: calc(var(--header-h) + var(--sp-2));
+  right: var(--sp-4);
+  width: 360px;
+  max-height: min(68vh, 640px);
+  background: var(--bg-panel);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-md);
+  box-shadow: 0 18px 48px rgba(0, 0, 0, 0.45);
+  overflow: hidden;
+}
+
+.alerts-drawer__header,
+.alerts-drawer__item-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.alerts-drawer__header {
+  padding: var(--sp-3);
+  border-bottom: 1px solid var(--border-subtle);
+  font-size: var(--text-sm);
+  color: var(--text-primary);
+  font-weight: var(--weight-bold);
+}
+
+.alerts-drawer__actions {
+  display: flex;
+  align-items: center;
+  gap: var(--sp-2);
+}
+
+.alerts-drawer__clear,
+.alerts-drawer__close {
+  font-size: var(--text-xs);
+  color: var(--text-secondary);
+}
+
+.alerts-drawer__clear:hover,
+.alerts-drawer__close:hover {
+  color: var(--text-primary);
+}
+
+.alerts-drawer__list {
+  overflow-y: auto;
+  max-height: calc(min(68vh, 640px) - 44px);
+}
+
+.alerts-drawer__item {
+  padding: var(--sp-3);
+  border-bottom: 1px solid var(--border-subtle);
+}
+
+.alerts-drawer__item--critical {
+  border-left: 2px solid var(--negative);
+}
+
+.alerts-drawer__item--high {
+  border-left: 2px solid var(--warning);
+}
+
+.alerts-drawer__item--medium {
+  border-left: 2px solid var(--info);
+}
+
+.alerts-drawer__item-actions {
+  display: flex;
+  align-items: center;
+  gap: var(--sp-2);
+}
+
+.alerts-drawer__dismiss {
+  font-size: var(--text-base);
+  color: var(--text-secondary);
+  line-height: 1;
+  padding: 0 2px;
+}
+
+.alerts-drawer__dismiss:hover {
+  color: var(--text-primary);
+}
+
+.alerts-drawer__severity,
+.alerts-drawer__time {
+  font-size: var(--text-xs);
+  color: var(--text-secondary);
+  text-transform: uppercase;
+}
+
+.alerts-drawer__message,
+.alerts-drawer__empty {
+  margin-top: var(--sp-2);
+  font-size: var(--text-sm);
+  color: var(--text-primary);
+  line-height: var(--leading-normal);
+}
+
+@media (max-width: 768px) {
+  .alerts-drawer {
+    right: var(--sp-2);
+    left: var(--sp-2);
+    width: auto;
+    max-height: 75vh;
+  }
+}

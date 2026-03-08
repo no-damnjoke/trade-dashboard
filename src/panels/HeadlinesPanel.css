@@ -1,0 +1,19 @@
+.panel-empty {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  height: 100%;
+  gap: var(--sp-1);
+}
+
+.panel-empty__text {
+  font-size: var(--text-sm);
+  color: var(--text-muted);
+}
+
+.panel-empty__sub {
+  font-size: var(--text-xs);
+  color: var(--text-muted);
+  opacity: 0.6;
+}

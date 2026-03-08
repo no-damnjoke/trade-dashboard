@@ -1,0 +1,38 @@
+{
+  "name": "market-monitor",
+  "private": true,
+  "version": "0.1.0",
+  "type": "module",
+  "scripts": {
+    "dev": "concurrently -k -n fe,be -c cyan,green \"vite\" \"tsx watch --env-file=.env server/index.ts\"",
+    "dev:fe": "vite",
+    "dev:be": "tsx watch server/index.ts",
+    "ai:proxy": "./.local/cliproxy/cli-proxy-api --config .cli-proxy-api.yaml",
+    "ai:proxy:claude-login": "./.local/cliproxy/cli-proxy-api --config .cli-proxy-api.yaml --claude-login",
+    "ai:proxy:codex-login": "./.local/cliproxy/cli-proxy-api --config .cli-proxy-api.yaml --codex-login",
+    "ai:proxy:models": "sh -c 'set -a; . ./.env; set +a; curl -fsS -H \"Authorization: Bearer $AI_BRIDGE_API_KEY\" http://127.0.0.1:8317/v1/models'",
+    "sim:fx-setup": "node ./scripts/simulate-fx-setup.mjs",
+    "sim:fx-10d": "node ./scripts/simulate-fx-ten-days.mjs",
+    "sim:fx-compare": "node ./scripts/compare-fx-reasoning.mjs",
+    "tunnel": "cloudflared tunnel --url http://localhost:5173",
+    "dev:remote": "concurrently -k -n fe,be,tunnel -c cyan,green,magenta \"vite\" \"tsx watch --env-file=.env server/index.ts\" \"cloudflared tunnel --url http://localhost:5173\"",
+    "build": "tsc -b && vite build",
+    "preview": "vite preview"
+  },
+  "dependencies": {
+    "@mathieuc/tradingview": "^3.5.2",
+    "@the-convocation/twitter-scraper": "^0.22.1",
+    "express": "^4.21.0",
+    "idb-keyval": "^6.2.1",
+    "preact": "^10.24.0"
+  },
+  "devDependencies": {
+    "@preact/preset-vite": "^2.9.0",
+    "@types/express": "^5.0.0",
+    "@types/node": "^22.0.0",
+    "concurrently": "^9.0.0",
+    "tsx": "^4.19.0",
+    "typescript": "^5.6.0",
+    "vite": "^6.0.0"
+  }
+}
