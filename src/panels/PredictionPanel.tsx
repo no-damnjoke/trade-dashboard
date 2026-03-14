@@ -11,18 +11,18 @@ interface PredictionsResponse {
 
 export function PredictionPanel() {
   const { data } = usePolling<PredictionsResponse>(
-    () => fetchJSON('/predictions/whales'),
+    () => fetchJSON('/predictions'),
     120_000,
   );
 
   const markets = data?.markets ?? [];
 
   return (
-    <Panel id="predictions" title="Whale Radar" badge={markets.length || undefined}>
+    <Panel id="predictions" title="Event Odds" badge={markets.length || undefined}>
       {markets.length === 0 ? (
         <div class="panel-empty">
-          <span class="panel-empty__text">Loading whale radar...</span>
-          <span class="panel-empty__sub">Polymarket wallets and price dislocations</span>
+          <span class="panel-empty__text">Loading event odds...</span>
+          <span class="panel-empty__sub">Tracking macro-relevant prediction markets</span>
         </div>
       ) : (
         markets.map(m => <PredictionRow key={m.id} market={m} />)

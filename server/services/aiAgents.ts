@@ -733,12 +733,12 @@ export function buildOpportunityWhaleCandidates(whales: PredictionMarket[]) {
       title: whale.question,
       sourceType: 'whale' as const,
       direction: 'neutral' as const,
-      summary: `${whale.side} flow ${Math.round(whale.estimatedSizeUsd || 0).toLocaleString()} USD`,
+      summary: `${whale.side} ${whale.yesPct}% | vol $${Math.round(whale.volume24h).toLocaleString()}`,
       supportingFactors: [
-        whale.confidenceLabel || 'whale radar',
-        whale.estimationNotes || 'public positions and trade flow',
+        whale.delta24h != null ? `24h shift ${whale.delta24h > 0 ? '+' : ''}${whale.delta24h.toFixed(1)}pp` : 'tracking',
+        `liquidity $${Math.round(whale.liquidity).toLocaleString()}`,
       ],
-      invalidation: 'Cancel if Polymarket mark reverses and flow stops building',
+      invalidation: 'Cancel if Polymarket probability reverses sharply',
       baselineScore: 55 + Math.min(35, Math.round((whale.estimatedSizeUsd || 0) / Math.max(whale.liquidity || 1, 1))),
       staleAfter: Date.now() + 30 * 60_000,
     }));

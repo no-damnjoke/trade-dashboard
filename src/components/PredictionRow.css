@@ -12,7 +12,7 @@
   border-left-color: var(--warning);
 }
 
-.pred-row--whale {
+.pred-row--shift {
   border-left-color: var(--accent);
   background: rgba(59, 130, 246, 0.04);
 }
@@ -21,7 +21,25 @@
   font-size: var(--text-sm);
   color: var(--text-primary);
   line-height: var(--leading-normal);
-  margin-bottom: 2px;
+  margin-bottom: 4px;
+}
+
+.pred-row__bar-wrap {
+  margin: 4px 0;
+}
+
+.pred-row__bar {
+  height: 4px;
+  border-radius: 2px;
+  background: rgba(255, 255, 255, 0.06);
+  overflow: hidden;
+}
+
+.pred-row__bar-fill {
+  height: 100%;
+  border-radius: 2px;
+  background: linear-gradient(90deg, var(--accent), rgba(56, 189, 248, 0.5));
+  transition: width 0.4s ease;
 }
 
 .pred-row__meta {
@@ -31,34 +49,11 @@
   margin-top: var(--sp-1);
 }
 
-.pred-row__profiles {
-  display: flex;
-  gap: var(--sp-2);
-  flex-wrap: wrap;
-  margin-top: var(--sp-2);
-}
-
-.pred-row__position {
-  display: flex;
-  gap: var(--sp-2);
-  flex-wrap: wrap;
-  margin-top: var(--sp-2);
-}
-
-.pred-row__position-item,
-.pred-row__profile {
-  font-size: var(--text-xs);
-  color: var(--text-primary);
-  background: var(--bg-elevated);
-  padding: 1px 5px;
-  border-radius: 2px;
-}
-
 .pred-row__pct {
   font-size: var(--text-sm);
   font-weight: var(--weight-bold);
   color: var(--text-secondary);
-  min-width: 62px;
+  min-width: 50px;
 }
 
 .pred-row__pct--high {
@@ -69,18 +64,31 @@
   color: var(--negative);
 }
 
-.pred-row__vol {
+.pred-row__delta {
   font-size: var(--text-xs);
   color: var(--text-muted);
 }
 
-.pred-row__spike {
-  font-size: 10px;
+.pred-row__delta--up {
+  color: var(--positive);
+}
+
+.pred-row__delta--down {
+  color: var(--negative);
+}
+
+.pred-row__delta--big-up {
+  color: var(--positive);
   font-weight: var(--weight-bold);
-  text-transform: uppercase;
-  letter-spacing: 0.5px;
-  padding: 1px 4px;
-  border-radius: 2px;
-  background: rgba(245, 158, 11, 0.2);
-  color: var(--warning);
+}
+
+.pred-row__delta--big-down {
+  color: var(--negative);
+  font-weight: var(--weight-bold);
+}
+
+.pred-row__vol {
+  font-size: var(--text-xs);
+  color: var(--text-muted);
+  margin-left: auto;
 }

@@ -26,25 +26,6 @@ export interface HeatmapEntry {
   changePercent: number;
 }
 
-export interface WhaleSignal {
-  type: 'proven_trader_building' | 'large_anonymous_position' | 'price_dislocation';
-  description: string;
-  magnitude: number;
-  timestamp: number;
-}
-
-export interface WhaleProfile {
-  wallet: string;
-  label: string;
-  classification: 'proven_trader_building' | 'large_anonymous_position';
-  reputationScore: number;
-  convictionScore: number;
-  impactScore: number;
-  pnl?: number;
-  size?: number;
-  reason: string;
-}
-
 export interface PredictionMarket {
   id: string;
   question: string;
@@ -56,17 +37,11 @@ export interface PredictionMarket {
   slug: string;
   tags: string[];
   volumeSpike?: boolean;
-  whaleActivity?: WhaleSignal[];
-  whaleProfiles?: WhaleProfile[];
-  confidenceLabel?: string;
+  yesPct: number;
+  delta1h: number | null;
+  delta24h: number | null;
   side?: 'YES' | 'NO' | 'unknown';
   estimatedSizeUsd?: number;
-  avgEntryPrice?: number | null;
-  currentMark?: number;
-  markMove?: number | null;
-  unrealizedPnlProxy?: number | null;
-  confidenceInEstimate?: 'high' | 'medium' | 'low';
-  estimationNotes?: string;
 }
 
 export interface Alert {
@@ -139,6 +114,7 @@ export interface AIProviderStatus {
   headlineImpactModel?: string;
   fxSetupModel?: string;
   opportunityRankerModel?: string;
+  countryFundamentalsModel?: string;
   lastLatencyMs?: number;
   avgLatencyMs?: number;
 }
@@ -234,6 +210,33 @@ export interface MarketState {
     };
     setups: TechnicalSetup[];
   };
+  fundamentals?: {
+    state: 'fresh' | 'stale' | 'degraded';
+    month: string;
+    lastSuccessfulRefresh: number;
+  };
 }
 
-export type PanelId = 'headlines' | 'watchlist' | 'calendar' | 'velocity' | 'setups' | 'predictions';
+export type PanelId =
+  | 'headlines'
+  | 'watchlist'
+  | 'calendar'
+  | 'velocity'
+  | 'setups'
+  | 'predictions'
+  | 'fundamentals';
+
+export type {
+  CountryAIInsight,
+  CountryChartSeries,
+  CountryCoverageStatus,
+  CountryDependency,
+  CountryMacroStat,
+  CountryResearchPacket,
+  CountryResearchSource,
+  CountryFundamentalsRefreshStatus,
+  CountryMapNode,
+  CountryProfileDepth,
+  CountryRefreshState,
+  MarketFundamentalsPayload,
+} from '../../shared/marketFundamentals';
