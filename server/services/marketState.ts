@@ -1,7 +1,7 @@
 import { getAIProviderStatus } from './aiProvider.js';
 import { getHeadlineStatus } from './headlines.js';
 import { MARKET_INSTRUMENTS } from './instruments.js';
-import { getMarketFundamentalsSummary } from './marketFundamentals.js';
+
 import { getMarketOpportunities } from './opportunities.js';
 import { getWhaleSnapshot } from './polymarket.js';
 import { getFXSetupContext, getTechnicalSetups } from './setups.js';
@@ -37,6 +37,5 @@ export function getDashboardMarketState() {
     assets: cachedAssets,
     macro: { regime, monitor, opportunities, signals, headlines },
     fxSetup: { context: fxSetupContext, setups },
-    fundamentals: getMarketFundamentalsSummary(),
   };
 }

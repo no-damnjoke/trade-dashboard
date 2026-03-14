@@ -210,10 +210,6 @@ export interface MarketState {
     };
     setups: TechnicalSetup[];
   };
-  fundamentals?: {
-    state: 'fresh' | 'stale' | 'degraded';
-    lastSuccessfulRefresh: number;
-  };
 }
 
 export type PanelId =
@@ -222,23 +218,4 @@ export type PanelId =
   | 'calendar'
   | 'velocity'
   | 'setups'
-  | 'predictions'
-  | 'fundamentals';
-
-export type {
-  CountryAIInsight,
-  CountryChartSeries,
-  CountryDependency,
-  CountryIndicator,
-  CountryResearchPacket,
-  CountryResearchSource,
-  CountryFundamentalsRefreshStatus,
-  CountryMapNode,
-  CountryProfileDepth,
-  CountryRefreshState,
-  DivergenceInsight,
-  IndicatorCategory,
-  IndicatorFrequency,
-  MarketFundamentalsPayload,
-  RateStance,
-} from '../../shared/marketFundamentals';
+  | 'predictions';

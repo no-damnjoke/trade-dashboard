@@ -22,8 +22,7 @@ export function CommandPalette() {
     { label: 'Focus Macro Shocks', shortcut: '4', action: () => { setFocusedPanel('velocity'); closePalette(); } },
     { label: 'Focus G10 FX Setups', shortcut: '5', action: () => { setFocusedPanel('setups'); closePalette(); } },
     { label: 'Focus Event Odds', shortcut: '6', action: () => { setFocusedPanel('predictions'); closePalette(); } },
-    { label: 'Focus Market Fundamentals', shortcut: '7', action: () => { setFocusedPanel('fundamentals'); closePalette(); } },
-    { label: 'Clear Focus', shortcut: 'Esc', action: () => { setFocusedPanel(null); closePalette(); } },
+{ label: 'Clear Focus', shortcut: 'Esc', action: () => { setFocusedPanel(null); closePalette(); } },
   ];
 
   const filtered = query

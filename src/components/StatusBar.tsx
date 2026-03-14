@@ -31,11 +31,6 @@ export function StatusBar() {
           ok={data?.aiProvider.available ?? true}
           detail={data?.aiProvider.enabled ? data.aiProvider.provider : 'deterministic'}
         />
-        <StatusDot
-          label="Fundamentals"
-          ok={(data?.fundamentals?.state ?? 'fresh') === 'fresh'}
-          detail={data?.fundamentals?.state ?? 'offline'}
-        />
       </div>
       <div class="statusbar__right">
         {data?.headlines.lastUpdated ? (

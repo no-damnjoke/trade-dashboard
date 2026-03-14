@@ -22,8 +22,8 @@ export function useKeyboardNavigation() {
         return;
       }
 
-      // Number keys 1-6 — direct panel focus
-      if (e.key >= '1' && e.key <= '6') {
+      // Number keys 1-7 — direct panel focus
+      if (e.key >= '1' && e.key <= '7') {
         const idx = parseInt(e.key) - 1;
         if (PANEL_ORDER[idx]) {
           e.preventDefault();

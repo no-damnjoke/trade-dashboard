@@ -2,7 +2,7 @@ import { useApp } from '../context/AppContext';
 import './HelpOverlay.css';
 
 const shortcuts = [
-  ['1 – 6', 'Focus panel'],
+  ['1 – 7', 'Focus panel'],
   ['Tab / Shift+Tab', 'Cycle panels'],
   ['j / k', 'Scroll focused panel'],
   ['Ctrl+K', 'Command palette'],
