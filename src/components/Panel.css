@@ -47,6 +47,10 @@
 }
 
 @media (max-width: 768px) {
+  .panel {
+    min-height: auto;
+  }
+
   .panel__header {
     padding: 0 var(--sp-2);
     position: sticky;
@@ -56,6 +60,8 @@
   }
 
   .panel__body {
+    overflow-y: auto;
+    max-height: calc(70vh - var(--panel-header-h));
     padding: var(--sp-1) 0;
     -webkit-overflow-scrolling: touch;
   }
