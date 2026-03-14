@@ -12,6 +12,8 @@ import { fxSetupRouter } from './routes/fxSetup.js';
 import { aiStatusRouter } from './routes/aiStatus.js';
 import { devMockMarketRouter } from './routes/devMockMarket.js';
 import { marketStateRouter } from './routes/marketState.js';
+import { marketFundamentalsRouter } from './routes/marketFundamentals.js';
+import { refreshMarketFundamentalsCache, refreshMarketData } from './services/marketFundamentals.js';
 import { pollVelocityMonitor } from './services/velocityMonitor.js';
 
 const app = express();
@@ -34,6 +36,7 @@ app.use('/api/setups', setupsRouter);
 app.use('/api/fx-setup', fxSetupRouter);
 app.use('/api/ai-status', aiStatusRouter);
 app.use('/api/market-state', marketStateRouter);
+app.use('/api/market-fundamentals', marketFundamentalsRouter);
 
 if (ENABLE_DEV_ROUTES || NODE_ENV !== 'production') {
   app.use('/api/dev/mock-market', devMockMarketRouter);
@@ -57,6 +60,11 @@ if (!DISABLE_VELOCITY_POLLING) {
     void pollVelocityMonitor();
   }, 30_000);
 }
+
+void refreshMarketFundamentalsCache();  // full refresh on startup
+setInterval(() => void refreshMarketData('fast'), 5 * 60_000);        // 5 min
+setInterval(() => void refreshMarketData('medium'), 2 * 60 * 60_000); // 2 hours
+setInterval(() => void refreshMarketData('slow'), 6 * 60 * 60_000);   // 6 hours
 
 app.listen(PORT, HOST, () => {
   console.log(`[BE] Market Monitor backend running on http://${HOST}:${PORT}`);

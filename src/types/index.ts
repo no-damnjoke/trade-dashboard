@@ -212,7 +212,6 @@ export interface MarketState {
   };
   fundamentals?: {
     state: 'fresh' | 'stale' | 'degraded';
-    month: string;
     lastSuccessfulRefresh: number;
   };
 }
