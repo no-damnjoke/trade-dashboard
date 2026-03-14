@@ -8,6 +8,7 @@ import { CalendarPanel } from '../panels/CalendarPanel';
 import { PredictionPanel } from '../panels/PredictionPanel';
 import { VelocityPanel } from '../panels/VelocityPanel';
 import { SetupsPanel } from '../panels/SetupsPanel';
+import { MarketFundamentalsPanel } from '../panels/MarketFundamentalsPanel';
 import { CommandPalette } from './CommandPalette';
 import { HelpOverlay } from './HelpOverlay';
 import { AlertsDrawer } from './AlertsDrawer';
@@ -35,6 +36,7 @@ export function Layout() {
     <div class="layout">
       <Header />
       <Heatmap />
+      <MarketFundamentalsPanel />
       <main class="layout__grid">
         <div class="layout__left">
           <HeadlinesPanel />

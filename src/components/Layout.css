@@ -1,6 +1,6 @@
 .layout {
   display: grid;
-  grid-template-rows: var(--header-h) var(--heatmap-h) 1fr var(--status-h);
+  grid-template-rows: var(--header-h) var(--heatmap-h) minmax(420px, 52vh) 1fr var(--status-h);
   height: 100vh;
   overflow: hidden;
   background: var(--bg-app);
@@ -24,7 +24,7 @@
 
 .layout__right {
   display: grid;
-  grid-template-rows: 1.2fr 1fr;
+  grid-template-rows: 1fr 1fr;
   gap: 1px;
   background: var(--border);
   min-height: 0;
@@ -32,7 +32,7 @@
 
 @media (max-width: 768px) {
   .layout {
-    grid-template-rows: var(--header-h) var(--heatmap-h) 1fr var(--status-h);
+    grid-template-rows: var(--header-h) var(--heatmap-h) auto 1fr var(--status-h);
     height: auto;
     min-height: 100vh;
     min-height: 100dvh;
