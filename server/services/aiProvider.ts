@@ -125,7 +125,7 @@ function extractJSONObject(raw: string) {
   const trimmed = raw.trim();
   if (!trimmed) return '';
 
-  const fencedMatch = trimmed.match(/^```(?:json)?\s*([\s\S]*?)\s*```$/i);
+  const fencedMatch = trimmed.match(/```(?:json)?\s*([\s\S]*?)\s*```/i);
   const candidate = fencedMatch ? fencedMatch[1].trim() : trimmed;
   if (candidate.startsWith('{') || candidate.startsWith('[')) {
     return candidate;
