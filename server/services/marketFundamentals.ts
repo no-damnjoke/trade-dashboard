@@ -328,7 +328,7 @@ async function buildInsight(profile: CountryResearchPacket): Promise<CountryAIIn
     agent: 'country-fundamentals',
     timeoutMs: 45_000,
     maxRetries: 0,
-    maxTokens: 1600,
+    maxTokens: 2500,
     systemPrompt: [
       'You are a macro strategist writing a **live conditions brief** for FX traders.',
       'Use only the supplied indicator values and context.',
