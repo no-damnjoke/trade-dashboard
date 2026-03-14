@@ -349,13 +349,18 @@ async function enhanceWithAI(
   const minConfidence = Number(process.env.AI_HEADLINE_MIN_CONFIDENCE || 60);
 
   if (!result.ok || !result.data || result.data.confidence < minConfidence) {
-    return {
+    const fallbackResult = {
       ...headline,
       thesisChange: false,
       alertRecommended: headline.actionability === 'actionable',
       confidence: headline.confidence ?? 0,
       fallbackReason: result.error || 'headline ai unavailable',
     };
+    headlineAICache.set(headline.dedupeKey, {
+      headline: fallbackResult,
+      expiresAt: Date.now() + 5 * 60_000,
+    });
+    return fallbackResult;
   }
 
   const enhanced: Headline = {

@@ -1,5 +1,5 @@
 export type AIProviderId = 'deterministic' | 'bridge-openai-compatible' | 'official-openai-compatible';
-export type AIAgentId = 'headline-impact' | 'fx-setup' | 'opportunity-ranker';
+export type AIAgentId = 'headline-impact' | 'fx-setup' | 'opportunity-ranker' | 'country-fundamentals';
 
 export interface AIProviderStatus {
   provider: AIProviderId;
@@ -11,6 +11,7 @@ export interface AIProviderStatus {
   headlineImpactModel?: string;
   fxSetupModel?: string;
   opportunityRankerModel?: string;
+  countryFundamentalsModel?: string;
   lastLatencyMs?: number;
   avgLatencyMs?: number;
   usage?: {
@@ -72,9 +73,11 @@ const AI_API_KEY = process.env.AI_BRIDGE_API_KEY || process.env.LOCAL_AI_API_KEY
 const HEADLINE_IMPACT_MODEL = process.env.AI_HEADLINE_MODEL || process.env.LOCAL_AI_MODEL || process.env.OPENAI_MODEL || 'gpt-4o-mini';
 const FX_SETUP_MODEL = process.env.AI_FX_SETUP_MODEL || HEADLINE_IMPACT_MODEL;
 const OPPORTUNITY_RANKER_MODEL = process.env.AI_OPPORTUNITY_MODEL || HEADLINE_IMPACT_MODEL;
+const COUNTRY_FUNDAMENTALS_MODEL = process.env.AI_COUNTRY_MODEL || HEADLINE_IMPACT_MODEL;
 const HEADLINE_REASONING_EFFORT = process.env.AI_HEADLINE_REASONING_EFFORT || 'low';
 const FX_SETUP_REASONING_EFFORT = process.env.AI_FX_SETUP_REASONING_EFFORT || 'medium';
 const OPPORTUNITY_REASONING_EFFORT = process.env.AI_OPPORTUNITY_REASONING_EFFORT || 'low';
+const COUNTRY_REASONING_EFFORT = process.env.AI_COUNTRY_REASONING_EFFORT || 'medium';
 const DEFAULT_TIMEOUT_MS = Number(process.env.AI_TIMEOUT_MS || 12_000);
 const DEFAULT_MAX_RETRIES = Number(process.env.AI_MAX_RETRIES || 1);
 
@@ -89,6 +92,7 @@ const usageStats = {
     'headline-impact': { requests: 0, success: 0, failure: 0 },
     'fx-setup': { requests: 0, success: 0, failure: 0 },
     'opportunity-ranker': { requests: 0, success: 0, failure: 0 },
+    'country-fundamentals': { requests: 0, success: 0, failure: 0 },
   } as Record<AIAgentId, {
     requests: number;
     success: number;
@@ -172,6 +176,8 @@ function modelForAgent(agent: AIAgentId) {
       return FX_SETUP_MODEL;
     case 'opportunity-ranker':
       return OPPORTUNITY_RANKER_MODEL;
+    case 'country-fundamentals':
+      return COUNTRY_FUNDAMENTALS_MODEL;
   }
 }
 
@@ -183,6 +189,8 @@ function reasoningEffortForAgent(agent: AIAgentId) {
       return FX_SETUP_REASONING_EFFORT;
     case 'opportunity-ranker':
       return OPPORTUNITY_REASONING_EFFORT;
+    case 'country-fundamentals':
+      return COUNTRY_REASONING_EFFORT;
   }
 }
 
@@ -201,6 +209,7 @@ export function getAIProviderStatus(): AIProviderStatus {
     headlineImpactModel: isAIEnabled() ? HEADLINE_IMPACT_MODEL : undefined,
     fxSetupModel: isAIEnabled() ? FX_SETUP_MODEL : undefined,
     opportunityRankerModel: isAIEnabled() ? OPPORTUNITY_RANKER_MODEL : undefined,
+    countryFundamentalsModel: isAIEnabled() ? COUNTRY_FUNDAMENTALS_MODEL : undefined,
     lastLatencyMs: lastLatencyMs || undefined,
     avgLatencyMs: getAverageLatency() || undefined,
     usage: isAIEnabled() ? usageStats : undefined,
@@ -215,7 +224,7 @@ export function resetAIUsageStats() {
   usageStats.totalSuccess = 0;
   usageStats.totalFailures = 0;
   usageStats.recent = [];
-  for (const agent of ['headline-impact', 'fx-setup', 'opportunity-ranker'] as const) {
+  for (const agent of ['headline-impact', 'fx-setup', 'opportunity-ranker', 'country-fundamentals'] as const) {
     usageStats.byAgent[agent] = {
       requests: 0,
       success: 0,
@@ -290,6 +299,9 @@ export async function invokeAIAgent<T>(options: AIInvocationOptions): Promise<AI
           statusCode: response.status,
           error: lastProviderError,
         });
+        if (response.status === 429) {
+          return { ok: false, error: lastProviderError };
+        }
         continue;
       }
 

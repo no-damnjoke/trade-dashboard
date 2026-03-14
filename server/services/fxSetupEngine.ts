@@ -406,6 +406,7 @@ export async function refreshFXSetups(): Promise<void> {
         ...setup,
         fallbackReason: result.error || 'fx setup ai unavailable',
       }));
+      lastAISignature = aiSignature;
       lastRefresh = Date.now();
       return;
     }

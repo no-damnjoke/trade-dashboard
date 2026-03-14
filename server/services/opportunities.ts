@@ -50,8 +50,10 @@ let cachedNarrative = '';
 let cachedThemes: string[] = [];
 let cachedConflicts: OpportunityConflict[] = [];
 let lastRefresh = 0;
+let lastAITriggeredAt = 0;
 const OPPORTUNITY_REFRESH_TTL_MS = 30_000;
 const OPPORTUNITY_AI_CACHE_TTL_MS = 5 * 60_000;
+const OPPORTUNITY_AI_MIN_INTERVAL_MS = 5 * 60_000;
 let lastAISignature = '';
 
 function scoreSignal(signal: VelocitySignal): number {
@@ -330,6 +332,15 @@ export async function refreshOpportunityBoard(): Promise<void> {
     return;
   }
 
+  if (lastAITriggeredAt > 0 && Date.now() - lastAITriggeredAt < OPPORTUNITY_AI_MIN_INTERVAL_MS) {
+    if (cachedOpportunities.length === 0) {
+      cachedOpportunities = deterministic;
+      lastRefresh = Date.now();
+    }
+    return;
+  }
+
+  lastAITriggeredAt = Date.now();
   const result = await evaluateOpportunities(snapshot);
   const minConfidence = Number(process.env.AI_OPPORTUNITY_MIN_CONFIDENCE || 60);
 
@@ -339,6 +350,7 @@ export async function refreshOpportunityBoard(): Promise<void> {
       fallbackReason: result.error || 'opportunity ai unavailable',
     }));
     clearAIInsights();
+    lastAISignature = aiSignature;
     lastRefresh = Date.now();
     return;
   }
