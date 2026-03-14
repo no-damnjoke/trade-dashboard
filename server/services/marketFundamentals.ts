@@ -326,7 +326,7 @@ async function buildInsight(profile: CountryResearchPacket): Promise<CountryAIIn
     blindSpots?: string[];
   }>({
     agent: 'country-fundamentals',
-    timeoutMs: 16_000,
+    timeoutMs: 45_000,
     maxRetries: 0,
     maxTokens: 1600,
     systemPrompt: [
