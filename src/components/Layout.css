@@ -1,6 +1,6 @@
 .layout {
   display: grid;
-  grid-template-rows: var(--header-h) var(--heatmap-h) minmax(420px, 52vh) 1fr var(--status-h);
+  grid-template-rows: var(--header-h) var(--heatmap-h) 1fr var(--status-h);
   height: 100vh;
   overflow: hidden;
   background: var(--bg-app);
