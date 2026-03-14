@@ -46,9 +46,10 @@
   padding: var(--sp-1) 0;
 }
 
-@media (max-width: 768px) {
+@media (max-width: 1024px) {
   .panel {
     min-height: auto;
+    border-bottom: 1px solid var(--border);
   }
 
   .panel__header {
@@ -60,9 +61,8 @@
   }
 
   .panel__body {
-    overflow-y: auto;
-    max-height: calc(70vh - var(--panel-header-h));
+    overflow: visible;
+    max-height: none;
     padding: var(--sp-1) 0;
-    -webkit-overflow-scrolling: touch;
   }
 }

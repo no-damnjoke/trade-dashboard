@@ -30,7 +30,7 @@
   min-height: 0;
 }
 
-@media (max-width: 768px) {
+@media (max-width: 1024px) {
   .layout {
     display: flex;
     flex-direction: column;
@@ -48,20 +48,17 @@
     min-height: auto;
     overflow: visible;
     gap: 0;
-    background: var(--border);
   }
 
   .layout__left,
   .layout__right {
     display: flex;
     flex-direction: column;
-    gap: 1px;
-    background: var(--border);
   }
 
   .layout__left > *,
   .layout__right > * {
     min-height: 0;
-    max-height: 70vh;
+    height: auto;
   }
 }
