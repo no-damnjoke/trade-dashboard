@@ -40,6 +40,7 @@ const SPORTS_EXCLUSION = [
   'serie a', 'bundesliga', 'ligue 1', 'world cup', 'super bowl', 'playoffs',
   'finals', 'mvp', 'touchdown', 'home run', 'ufc', 'boxing', 'tennis',
   'grand slam', 'formula 1', 'f1', 'nascar', 'copa', 'eredivisie',
+  ' vs. ', 'oscars', 'grammy', 'emmy', 'golden globe', 'academy award',
 ];
 
 const priceHistory = new Map<string, PriceSnapshot[]>();
