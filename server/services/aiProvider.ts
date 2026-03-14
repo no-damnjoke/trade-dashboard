@@ -125,19 +125,24 @@ function extractJSONObject(raw: string) {
   const trimmed = raw.trim();
   if (!trimmed) return '';
 
-  const fencedMatch = trimmed.match(/```(?:json)?\s*([\s\S]*?)\s*```/i);
-  const candidate = fencedMatch ? fencedMatch[1].trim() : trimmed;
-  if (candidate.startsWith('{') || candidate.startsWith('[')) {
-    return candidate;
+  // Strip markdown fences if present
+  const stripped = trimmed.replace(/^```(?:json)?\s*/i, '').replace(/\s*```\s*$/, '');
+
+  // Find the outermost JSON object or array
+  const firstBrace = stripped.indexOf('{');
+  const firstBracket = stripped.indexOf('[');
+  const start = firstBrace === -1 ? firstBracket
+    : firstBracket === -1 ? firstBrace
+    : Math.min(firstBrace, firstBracket);
+  if (start === -1) return stripped;
+
+  const closer = stripped[start] === '{' ? '}' : ']';
+  const lastClose = stripped.lastIndexOf(closer);
+  if (lastClose > start) {
+    return stripped.slice(start, lastClose + 1);
   }
 
-  const firstBrace = candidate.indexOf('{');
-  const lastBrace = candidate.lastIndexOf('}');
-  if (firstBrace !== -1 && lastBrace > firstBrace) {
-    return candidate.slice(firstBrace, lastBrace + 1);
-  }
-
-  return candidate;
+  return stripped;
 }
 
 function isAIEnabled() {
