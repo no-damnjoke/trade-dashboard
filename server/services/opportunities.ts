@@ -94,9 +94,7 @@ export function getDeterministicMarketOpportunities(
 
   for (const signal of signals.slice(0, 8)) {
     const alignedHeadline = headlines.find(headline =>
-      headline.affectedAssets.includes(signal.pair) ||
-      headline.marketImpact === signal.assetClass ||
-      (signal.assetClass === 'fx' && headline.marketImpact === 'broad')
+      headline.affectedAssets.includes(signal.pair)
     );
 
     const instrument = getInstrument(signal.pair);
