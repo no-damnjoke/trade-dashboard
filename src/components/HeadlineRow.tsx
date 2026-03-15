@@ -22,6 +22,9 @@ export function HeadlineRow({ headline }: { headline: Headline }) {
         {headline.thesisChange && <span class="headline-row__tag headline-row__tag--thesis">thesis change</span>}
       </div>
       <span class="headline-row__text">{cleanText(headline.text)}</span>
+      {isAI && headline.whyItMatters && (
+        <div class="headline-row__comment">{headline.whyItMatters}</div>
+      )}
     </div>
   );
 }
