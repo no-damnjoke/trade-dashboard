@@ -295,10 +295,9 @@ function normalizeHeadlineResult(
     return isMarketImpact(marketImpactRaw) ? marketImpactRaw : fallback.marketImpact;
   })();
   const thesisChange = resolveThesisChange(snapshot, raw, fallback.thesisChange ?? false);
-  const whyItMatters = [
-    typeof raw.whyItMatters === 'string' ? raw.whyItMatters.trim() : '',
-    fallback.whyItMatters,
-  ].filter(Boolean).join(' ');
+  const whyItMatters = typeof raw.whyItMatters === 'string' && raw.whyItMatters.trim()
+    ? raw.whyItMatters.trim()
+    : fallback.whyItMatters;
   const alertRecommended = typeof raw.alertRecommended === 'boolean'
     ? raw.alertRecommended
     : (fallback.alertRecommended ?? actionability === 'actionable');
@@ -341,6 +340,8 @@ export async function evaluateHeadlineImpact(snapshot: HeadlineImpactSnapshot) {
     '- Repeated war/strike headlines in an active conflict are LOW unless they open a new theater or chokepoint.',
     '- A policymaker repeating known stance is LOW or MEDIUM, not critical.',
     '- Dramatic wording alone does not make something critical.',
+    '- NEVER claim something is "first report" or "first time" unless you are certain from the supplied data. Check the contextBrief and relatedHeadlines — if similar events are already covered, this is a continuation.',
+    '- Keep whyItMatters to YOUR OWN analysis only. Do not repeat or echo the deterministic tags from the payload.',
     '',
     'thesisChange: true ONLY if the headline materially changes or invalidates the prevailing market narrative.',
     'whyItMatters: One short sentence, under 15 words. No background, no scene-setting.',
