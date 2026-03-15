@@ -3,6 +3,7 @@ import { addAlert } from './alertEngine.js';
 import { evaluateHeadlineImpact, type HeadlineImpactSnapshot } from './aiAgents.js';
 import { getLatestQuotes, getRegimeSnapshot } from './velocityMonitor.js';
 import { getWhaleSnapshot } from './polymarket.js';
+import { getContextBriefForAI } from './contextBrief.js';
 
 export interface Headline {
   id: string;
@@ -226,7 +227,7 @@ function buildHeadlineImpactSnapshot(
   deterministic: Omit<Headline, 'id' | 'text' | 'timestamp' | 'source' | 'provider' | 'dedupeKey'>,
   relatedHeadlines: Headline[],
   marketContext: ReturnType<typeof getRegimeSnapshot>,
-): HeadlineImpactSnapshot {
+): HeadlineImpactSnapshot & { contextBrief?: ReturnType<typeof getContextBriefForAI> } {
   const quotes = new Map(getLatestQuotes().map(quote => [quote.instrumentId, quote]));
 
   return {
@@ -273,6 +274,7 @@ function buildHeadlineImpactSnapshot(
       displayName: asset,
       currentPrice: quotes.get(asset)?.price ?? 0,
     })),
+    contextBrief: getContextBriefForAI() ?? undefined,
   };
 }
 

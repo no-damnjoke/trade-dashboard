@@ -5,6 +5,7 @@ import { getInstrument } from './instruments.js';
 import { getWhaleSnapshot } from './polymarket.js';
 import { getTechnicalSetups } from './setups.js';
 import { getRegimeSnapshot, getActiveSignals, type VelocitySignal } from './velocityMonitor.js';
+import { getContextBriefForAI } from './contextBrief.js';
 
 export interface OpportunityConflict {
   instrument: string;
@@ -281,7 +282,8 @@ function buildOpportunitySnapshot(
       ...heatmapSummary,
     },
     candidates,
-  };
+    contextBrief: getContextBriefForAI() ?? undefined,
+  } as OpportunitySnapshot;
 }
 
 function shouldUseOpportunityAI(_deterministic: MarketOpportunity[], snapshot: OpportunitySnapshot) {

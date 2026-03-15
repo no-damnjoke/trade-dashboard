@@ -13,6 +13,7 @@ import { aiStatusRouter } from './routes/aiStatus.js';
 import { devMockMarketRouter } from './routes/devMockMarket.js';
 import { marketStateRouter } from './routes/marketState.js';
 import { pollVelocityMonitor } from './services/velocityMonitor.js';
+import { refreshContextBrief, getContextBrief } from './services/contextBrief.js';
 
 const app = express();
 const PORT = Number(process.env.PORT || 3001);
@@ -43,6 +44,10 @@ app.get('/api/health', (_req, res) => {
   res.json({ status: 'ok', timestamp: Date.now() });
 });
 
+app.get('/api/context-brief', (_req, res) => {
+  res.json(getContextBrief());
+});
+
 // Serve built frontend in production
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const distPath = path.join(__dirname, '..', 'dist');
@@ -58,6 +63,9 @@ if (!DISABLE_VELOCITY_POLLING) {
   }, 30_000);
 }
 
+
+void refreshContextBrief();
+setInterval(() => void refreshContextBrief(), 6 * 60 * 60_000);
 
 app.listen(PORT, HOST, () => {
   console.log(`[BE] Market Monitor backend running on http://${HOST}:${PORT}`);
