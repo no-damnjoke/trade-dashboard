@@ -683,6 +683,7 @@ export async function evaluateOpportunities(snapshot: OpportunitySnapshot) {
     '',
     '4. CONFLICTS: When sources disagree on an instrument or theme (e.g., bullish FX setup vs bearish headline), surface it as a conflict entry.',
     '   - Each conflict needs: instrument, description, sources array, and recommendation ("watch", "fade", or "wait").',
+    '   - For instrument, use a readable label like "USD Regime", "DXY", or the pair name. Do not use camelCase or internal field names.',
     '   - Also set conflictFlag on the relevant opportunity object with a short description.',
     '',
     'Keep commentary concise: at most 2 short sentences, ideally under 35 words total.',
