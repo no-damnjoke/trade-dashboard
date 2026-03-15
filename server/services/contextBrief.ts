@@ -21,23 +21,23 @@ interface ContextBrief {
 }
 
 const RSS_FEEDS: Array<{ url: string; source: string }> = [
-  // Google News — macro/economy/forex
+  // Google News — macro/forex/economy (customizable query, ~50 items)
   { url: 'https://news.google.com/rss/search?q=forex+macro+economy+central+bank&hl=en', source: 'Google News' },
-  // Google News — finance topic
-  { url: 'https://news.google.com/rss/topics/CAAqJggKIiBDQkFTRWdvSUwyMHZNRGx6TVdZU0FtVnVHZ0pWVXlnQVAB', source: 'Google Finance' },
-  // CNBC World Markets
-  { url: 'https://www.cnbc.com/id/100003114/device/rss/rss.html', source: 'CNBC' },
-  // MarketWatch Top Stories
-  { url: 'https://feeds.marketwatch.com/marketwatch/topstories', source: 'MarketWatch' },
-  // WSJ Markets
+  // CNBC — World Markets (30 items, reliable)
+  { url: 'https://www.cnbc.com/id/100003114/device/rss/rss.html', source: 'CNBC Markets' },
+  // CNBC — Economy (32 items)
+  { url: 'https://www.cnbc.com/id/20910258/device/rss/rss.html', source: 'CNBC Economy' },
+  // WSJ — Markets (20 items, quality headlines)
   { url: 'https://feeds.a.dj.com/rss/RSSMarketsMain.xml', source: 'WSJ' },
-  // Reuters World
-  { url: 'https://news.google.com/rss/search?q=site:reuters.com+forex+OR+economy+OR+fed+OR+central+bank&hl=en', source: 'Reuters via Google' },
-  // FT via Google
-  { url: 'https://news.google.com/rss/search?q=site:ft.com+markets+OR+economy+OR+central+bank&hl=en', source: 'FT via Google' },
-  // Nikkei Asia via Google
-  { url: 'https://news.google.com/rss/search?q=site:asia.nikkei.com+markets+OR+economy&hl=en', source: 'Nikkei via Google' },
-  // 華爾街見聞 via Google
+  // MarketWatch — Top Stories (via Dow Jones CDN, 10 items)
+  { url: 'https://feeds.content.dowjones.io/public/rss/mw_topstories', source: 'MarketWatch' },
+  // Nikkei Asia — Asia-Pacific macro (50 items)
+  { url: 'https://asia.nikkei.com/rss/feed/nar', source: 'Nikkei Asia' },
+  // Reuters via Google News (since direct RSS blocked)
+  { url: 'https://news.google.com/rss/search?q=site:reuters.com+forex+OR+economy+OR+fed+OR+central+bank&hl=en', source: 'Reuters' },
+  // FT via Google News (since direct RSS blocked)
+  { url: 'https://news.google.com/rss/search?q=site:ft.com+markets+OR+economy+OR+central+bank&hl=en', source: 'FT' },
+  // 華爾街見聞 via Google News (since direct RSS 404)
   { url: 'https://news.google.com/rss/search?q=site:wallstreetcn.com&hl=zh-CN', source: '華爾街見聞' },
 ];
 
