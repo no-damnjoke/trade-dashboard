@@ -4,6 +4,7 @@ import { evaluateHeadlineImpact, type HeadlineImpactSnapshot } from './aiAgents.
 import { getLatestQuotes, getRegimeSnapshot } from './velocityMonitor.js';
 import { getWhaleSnapshot } from './polymarket.js';
 import { getContextBriefForAI } from './contextBrief.js';
+import { searchHeadline } from './braveSearch.js';
 
 export interface Headline {
   id: string;
@@ -346,7 +347,13 @@ async function enhanceWithAI(
     };
   }
 
-  const snapshot = buildHeadlineImpactSnapshot(headline, deterministic, relatedHeadlines, marketContext);
+  const webResults = await searchHeadline(headline.text, 4);
+  const snapshot = {
+    ...buildHeadlineImpactSnapshot(headline, deterministic, relatedHeadlines, marketContext),
+    webSearch: webResults.length > 0
+      ? webResults.map(r => ({ title: r.title, description: r.description, age: r.age }))
+      : undefined,
+  };
   const result = await evaluateHeadlineImpact(snapshot);
   const minConfidence = Number(process.env.AI_HEADLINE_MIN_CONFIDENCE || 60);
 
