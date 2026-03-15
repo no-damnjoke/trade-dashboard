@@ -62,12 +62,7 @@
   color: var(--info);
 }
 
-.headline-row__why {
-  font-size: var(--text-xs);
-  color: var(--text-secondary);
-  display: block;
-  width: 100%;
-  line-height: var(--leading-normal);
-  white-space: normal;
-  overflow-wrap: anywhere;
+.headline-row__tag--ai {
+  color: #a78bfa;
+  background: rgba(139, 92, 246, 0.15);
 }
