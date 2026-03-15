@@ -1,3 +1,5 @@
+import { trackRequest } from './apiTracker.js';
+
 const BRAVE_API_KEY = process.env.BRAVE_SEARCH_API_KEY || '';
 
 interface BraveSearchResult {
@@ -10,6 +12,7 @@ interface BraveSearchResult {
 export async function searchHeadline(query: string, count = 5): Promise<BraveSearchResult[]> {
   if (!BRAVE_API_KEY) return [];
 
+  const startTime = Date.now();
   try {
     const params = new URLSearchParams({
       q: query,
@@ -17,7 +20,6 @@ export async function searchHeadline(query: string, count = 5): Promise<BraveSea
       freshness: 'pd', // past day
       text_decorations: 'false',
     });
-
     const controller = new AbortController();
     const timeout = setTimeout(() => controller.abort(), 5_000);
 
@@ -31,6 +33,7 @@ export async function searchHeadline(query: string, count = 5): Promise<BraveSea
     });
 
     clearTimeout(timeout);
+    trackRequest({ service: 'brave-search', endpoint: 'web/search', method: 'GET', status: response.status, latencyMs: Date.now() - startTime, detail: query.slice(0, 60) });
     if (!response.ok) return [];
 
     const data = await response.json();
@@ -42,7 +45,8 @@ export async function searchHeadline(query: string, count = 5): Promise<BraveSea
       description: (r.description || '').slice(0, 200),
       age: r.age || undefined,
     }));
-  } catch {
+  } catch (err) {
+    trackRequest({ service: 'brave-search', endpoint: 'web/search', method: 'GET', status: 'error', latencyMs: Date.now() - startTime, detail: query.slice(0, 60) });
     return [];
   }
 }

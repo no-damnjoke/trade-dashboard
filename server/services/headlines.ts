@@ -358,8 +358,10 @@ async function enhanceWithAI(
   const minConfidence = Number(process.env.AI_HEADLINE_MIN_CONFIDENCE || 60);
 
   if (!result.ok || !result.data || result.data.confidence < minConfidence) {
+    const cappedImportance = headline.importance === 'critical' ? 'high' : headline.importance;
     const fallbackResult = {
       ...headline,
+      importance: cappedImportance as Headline['importance'],
       thesisChange: false,
       alertRecommended: headline.actionability === 'actionable',
       confidence: headline.confidence ?? 0,

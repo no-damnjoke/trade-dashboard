@@ -14,6 +14,7 @@ import { devMockMarketRouter } from './routes/devMockMarket.js';
 import { marketStateRouter } from './routes/marketState.js';
 import { pollVelocityMonitor } from './services/velocityMonitor.js';
 import { refreshContextBrief, getContextBrief } from './services/contextBrief.js';
+import { getAPILog, getAPIStats } from './services/apiTracker.js';
 
 const app = express();
 const PORT = Number(process.env.PORT || 3001);
@@ -46,6 +47,10 @@ app.get('/api/health', (_req, res) => {
 
 app.get('/api/context-brief', (_req, res) => {
   res.json(getContextBrief());
+});
+
+app.get('/api/api-tracker', (_req, res) => {
+  res.json({ stats: getAPIStats(), recent: getAPILog(100) });
 });
 
 // Serve built frontend in production

@@ -81,6 +81,8 @@ const COUNTRY_REASONING_EFFORT = process.env.AI_COUNTRY_REASONING_EFFORT || 'med
 const DEFAULT_TIMEOUT_MS = Number(process.env.AI_TIMEOUT_MS || 12_000);
 const DEFAULT_MAX_RETRIES = Number(process.env.AI_MAX_RETRIES || 1);
 
+import { trackRequest } from './apiTracker.js';
+
 let lastProviderError = '';
 let lastLatencyMs = 0;
 let latencySamples: number[] = [];
@@ -281,7 +283,9 @@ export async function invokeAIAgent<T>(options: AIInvocationOptions): Promise<AI
       });
 
       clearTimeout(timeout);
-      recordLatency(Date.now() - startedAt);
+      const elapsed = Date.now() - startedAt;
+      recordLatency(elapsed);
+      trackRequest({ service: 'ai-proxy', endpoint: options.agent, method: 'POST', status: response.status, latencyMs: elapsed, detail: model });
       usageStats.byAgent[options.agent].lastStatusCode = response.status;
       usageStats.byAgent[options.agent].rateLimit = {
         limit: response.headers.get('x-ratelimit-limit-requests') || response.headers.get('x-ratelimit-limit') || undefined,
@@ -362,6 +366,8 @@ export async function invokeAIAgent<T>(options: AIInvocationOptions): Promise<AI
       }
     } catch (error) {
       clearTimeout(timeout);
+      const status = (error as Error).name === 'AbortError' ? 'timeout' as const : 'error' as const;
+      trackRequest({ service: 'ai-proxy', endpoint: options.agent, method: 'POST', status, latencyMs: Date.now() - startedAt, detail: `${model}: ${(error as Error).message}` });
       lastProviderError = (error as Error).name === 'AbortError'
         ? `${options.agent} timeout`
         : (error as Error).message;
