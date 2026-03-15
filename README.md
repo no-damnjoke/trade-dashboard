@@ -50,7 +50,6 @@ Frontend (Preact + Vite)         Backend (Express + TypeScript)
 | `headline-impact` | claude-haiku-4-5 | low | Scores headline market impact, identifies affected instruments |
 | `fx-setup` | claude-sonnet-4-6 | medium | Generates FX trade setups with entry/target/stop levels |
 | `opportunity-ranker` | claude-sonnet-4-6 | low | Ranks cross-asset opportunities from headlines + velocity + technicals |
-| `country-fundamentals` | (per AI_COUNTRY_MODEL) | medium | Generates G10 country research packets with macro stats |
 
 All agents use an OpenAI-compatible API interface and support three provider modes: `deterministic` (no AI, fallback output), `bridge-openai-compatible` (local proxy), and `official-openai-compatible` (direct API). When AI is disabled or fails, agents fall back to deterministic output.
 
@@ -99,11 +98,11 @@ Create a `.env` file in the project root. All variables are optional unless note
 | `AI_HEADLINE_MODEL` | Model for headline-impact agent | `gpt-4o-mini` |
 | `AI_FX_SETUP_MODEL` | Model for fx-setup agent | (same as headline model) |
 | `AI_OPPORTUNITY_MODEL` | Model for opportunity-ranker agent | (same as headline model) |
-| `AI_COUNTRY_MODEL` | Model for country-fundamentals agent | (same as headline model) |
+
 | `AI_HEADLINE_REASONING_EFFORT` | Reasoning effort for headline-impact | `low` |
 | `AI_FX_SETUP_REASONING_EFFORT` | Reasoning effort for fx-setup | `medium` |
 | `AI_OPPORTUNITY_REASONING_EFFORT` | Reasoning effort for opportunity-ranker | `low` |
-| `AI_COUNTRY_REASONING_EFFORT` | Reasoning effort for country-fundamentals | `medium` |
+
 | `AI_TIMEOUT_MS` | AI request timeout in milliseconds | `12000` |
 | `AI_MAX_RETRIES` | Max retry attempts per AI request | `1` |
 | `AI_HEADLINE_MIN_CONFIDENCE` | Minimum confidence to surface a headline impact | `60` |

@@ -4,7 +4,7 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ## Project Overview
 
-Market Monitor — a real-time trading dashboard that aggregates market data (FX, crypto, rates, indices, commodities), news headlines, prediction markets, AI-generated trade setups, and macro country fundamentals into a single view.
+Market Monitor — a real-time trading dashboard that aggregates market data (FX, crypto, rates, indices, commodities), news headlines, prediction markets, and AI-generated trade setups into a single view.
 
 ## Commands
 
@@ -39,8 +39,7 @@ No test runner is configured. Validate with `npm run build` and manual verificat
 - **Market data:** `server/services/instruments.ts` defines tracked universe (`MARKET_INSTRUMENTS`). Prices via TradingView (`tradingview.ts`, `tradingviewCandles.ts`).
 - **Velocity monitor:** `server/services/velocityMonitor.ts` — polls every 30s, computes velocity/acceleration/z-score
 - **Headlines:** `server/services/headlines.ts` — Telegram (FirstSquawk) + Twitter scraping
-- **Market fundamentals:** `server/services/marketFundamentals.ts` — G10 country research packets with macro stats, charts, sources. Cached on startup, refreshed every 6 hours via AI or deterministic fallback.
-- **AI layer:** `server/services/aiProvider.ts` — OpenAI-compatible client with three provider modes. Four AI agents: `headline-impact`, `fx-setup`, `opportunity-ranker`, `country-fundamentals` (defined in `aiAgents.ts`). Falls back to deterministic output when AI is disabled/fails.
+- **AI layer:** `server/services/aiProvider.ts` — OpenAI-compatible client with three provider modes. Three AI agents: `headline-impact`, `fx-setup`, `opportunity-ranker` (defined in `aiAgents.ts`). Falls back to deterministic output when AI is disabled/fails.
 - **Prediction markets:** `server/services/polymarket.ts` — whale tracking and prediction data
 - **Mock data:** `server/services/mockMarketData.ts` + `server/routes/devMockMarket.ts` for dev without live feeds
 
@@ -50,14 +49,13 @@ No test runner is configured. Validate with `npm run build` and manual verificat
 
 ### Frontend ↔ Backend
 
-Vite proxies `/api` → `localhost:3001` during development (configured in `vite.config.ts`). In production, Express serves static files directly. All data flow is poll-based at various intervals (alerts 5s, fundamentals 60s, etc.).
+Vite proxies `/api` → `localhost:3001` during development (configured in `vite.config.ts`). In production, Express serves static files directly. All data flow is poll-based at various intervals (alerts 5s, headlines 30s, etc.).
 
 ## Key Env Vars
 
 - `AI_PROVIDER` — `deterministic` (default, no AI), `bridge-openai-compatible`, or `official-openai-compatible`
 - `AI_BRIDGE_BASE_URL` / `AI_BRIDGE_API_KEY` — AI proxy connection
-- `AI_HEADLINE_MODEL`, `AI_FX_SETUP_MODEL`, `AI_OPPORTUNITY_MODEL`, `AI_COUNTRY_MODEL` — per-agent model overrides
-- `AI_COUNTRY_REASONING_EFFORT` — reasoning level for country fundamentals (default `medium`)
+- `AI_HEADLINE_MODEL`, `AI_FX_SETUP_MODEL`, `AI_OPPORTUNITY_MODEL` — per-agent model overrides
 - `FIRSTSQUAWK_TG_CHANNEL` — Telegram channel for headline scraping
 - `DISABLE_VELOCITY_POLLING` — set `true` to skip velocity monitor on startup
 - `PORT` — backend port (default 3001)
