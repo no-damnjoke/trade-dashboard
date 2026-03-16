@@ -114,7 +114,6 @@ export interface AIProviderStatus {
   headlineImpactModel?: string;
   fxSetupModel?: string;
   opportunityRankerModel?: string;
-  countryFundamentalsModel?: string;
   lastLatencyMs?: number;
   avgLatencyMs?: number;
 }

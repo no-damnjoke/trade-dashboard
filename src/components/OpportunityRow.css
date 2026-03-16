@@ -71,6 +71,15 @@
   color: var(--text-secondary);
 }
 
+.opp-row__type {
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+}
+
+.opp-row__instrument {
+  color: var(--text-muted);
+}
+
 .opp-row__bias {
   border-radius: var(--radius-sm);
   padding: 1px 6px;

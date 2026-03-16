@@ -61,6 +61,11 @@ let lastAINormalizedResult: AIFXSetup[] = [];
 let lastAIError: string | null = null;
 let lastAITriggeredAt = 0;
 
+function getActiveCachedAISetups() {
+  const now = Date.now();
+  return cachedSetups.filter(setup => setup.classificationMethod === 'ai' && setup.staleAfter > now);
+}
+
 function scoreSignal(signal: VelocitySignal): number {
   return signal.zScore * 18 + Math.abs(signal.acceleration) * 12 + signal.moveBps / 4;
 }
@@ -402,10 +407,13 @@ export async function refreshFXSetups(): Promise<void> {
 
     if (!result.ok || !result.data) {
       lastAIError = result.error || 'fx setup ai unavailable';
-      cachedSetups = deterministic.map(setup => ({
-        ...setup,
-        fallbackReason: result.error || 'fx setup ai unavailable',
-      }));
+      const activeAISetups = getActiveCachedAISetups();
+      cachedSetups = activeAISetups.length > 0
+        ? activeAISetups
+        : deterministic.map(setup => ({
+            ...setup,
+            fallbackReason: result.error || 'fx setup ai unavailable',
+          }));
       lastAISignature = aiSignature;
       lastRefresh = Date.now();
       return;
@@ -416,14 +424,17 @@ export async function refreshFXSetups(): Promise<void> {
       .map(toTechnicalSetup)
       .slice(0, 8);
 
-    cachedSetups = aiSetups.length > 0
-      ? aiSetups
-      : deterministic.map(setup => ({
-          ...setup,
-          fallbackReason: 'fx setup ai returned no qualified setups',
-        }));
-    if (aiSetups.length === 0) {
+    if (aiSetups.length > 0) {
+      cachedSetups = aiSetups;
+    } else {
       lastAIError = 'fx setup ai returned no qualified setups';
+      const activeAISetups = getActiveCachedAISetups();
+      cachedSetups = activeAISetups.length > 0
+        ? activeAISetups
+        : deterministic.map(setup => ({
+            ...setup,
+            fallbackReason: 'fx setup ai returned no qualified setups',
+          }));
     }
     lastAISignature = aiSignature;
     lastRefresh = Date.now();
@@ -431,10 +442,13 @@ export async function refreshFXSetups(): Promise<void> {
     lastAIRawResult = null;
     lastAINormalizedResult = [];
     lastAIError = (error as Error).message;
-    cachedSetups = deterministic.map(setup => ({
-      ...setup,
-      fallbackReason: (error as Error).message,
-    }));
+    const activeAISetups = getActiveCachedAISetups();
+    cachedSetups = activeAISetups.length > 0
+      ? activeAISetups
+      : deterministic.map(setup => ({
+          ...setup,
+          fallbackReason: (error as Error).message,
+        }));
     lastRefresh = Date.now();
   }
 }

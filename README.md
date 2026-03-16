@@ -47,9 +47,9 @@ Frontend (Preact + Vite)         Backend (Express + TypeScript)
 
 | Agent | Default Model | Reasoning Effort | Purpose |
 |-------|--------------|-------------------|---------|
-| `headline-impact` | claude-haiku-4-5 | low | Scores headline market impact, identifies affected instruments |
+| `headline-impact` | gpt-5.1-codex-mini | low | Scores headline market impact, identifies affected instruments |
 | `fx-setup` | claude-sonnet-4-6 | medium | Generates FX trade setups with entry/target/stop levels |
-| `opportunity-ranker` | claude-sonnet-4-6 | low | Ranks cross-asset opportunities from headlines + velocity + technicals |
+| `opportunity-ranker` | gpt-5.1-codex-mini | low | Ranks cross-asset opportunities from headlines + velocity + technicals |
 
 All agents use an OpenAI-compatible API interface and support three provider modes: `deterministic` (no AI, fallback output), `bridge-openai-compatible` (local proxy), and `official-openai-compatible` (direct API). When AI is disabled or fails, agents fall back to deterministic output.
 
@@ -95,9 +95,9 @@ Create a `.env` file in the project root. All variables are optional unless note
 | `AI_PROVIDER` | AI provider mode: `deterministic`, `bridge-openai-compatible`, `official-openai-compatible` | `deterministic` |
 | `AI_BRIDGE_BASE_URL` | Base URL for the AI proxy | `http://127.0.0.1:8765/v1` |
 | `AI_BRIDGE_API_KEY` | API key for the AI proxy | (none) |
-| `AI_HEADLINE_MODEL` | Model for headline-impact agent | `gpt-4o-mini` |
-| `AI_FX_SETUP_MODEL` | Model for fx-setup agent | (same as headline model) |
-| `AI_OPPORTUNITY_MODEL` | Model for opportunity-ranker agent | (same as headline model) |
+| `AI_HEADLINE_MODEL` | Model for headline-impact agent | `gpt-5.1-codex-mini` |
+| `AI_FX_SETUP_MODEL` | Model for fx-setup agent | `claude-sonnet-4-6` |
+| `AI_OPPORTUNITY_MODEL` | Model for opportunity-ranker agent | `gpt-5.1-codex-mini` |
 
 | `AI_HEADLINE_REASONING_EFFORT` | Reasoning effort for headline-impact | `low` |
 | `AI_FX_SETUP_REASONING_EFFORT` | Reasoning effort for fx-setup | `medium` |

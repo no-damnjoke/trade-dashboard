@@ -57,6 +57,11 @@ const OPPORTUNITY_AI_CACHE_TTL_MS = 5 * 60_000;
 const OPPORTUNITY_AI_MIN_INTERVAL_MS = 5 * 60_000;
 let lastAISignature = '';
 
+function getActiveCachedAIOpportunities() {
+  const now = Date.now();
+  return cachedOpportunities.filter(opportunity => opportunity.classificationMethod === 'ai' && opportunity.staleAfter > now);
+}
+
 function scoreSignal(signal: VelocitySignal): number {
   const weights = ASSET_SCORE_WEIGHTS[signal.assetClass];
   return (
@@ -79,6 +84,20 @@ function setupTypeFromSignal(signal: VelocitySignal, hasHeadline: boolean): Mark
   return 'macro_continuation';
 }
 
+function shouldSurfaceDeterministicOpportunity(
+  signal: VelocitySignal,
+  hasAlignedHeadline: boolean,
+  regime: ReturnType<typeof getRegimeSnapshot>,
+) {
+  if (hasAlignedHeadline) return true;
+
+  if (signal.assetClass === 'fx') {
+    return regime.usdBias !== 'mixed';
+  }
+
+  return false;
+}
+
 export function getDeterministicMarketOpportunities(
   headlinesBundle?: ReturnType<typeof getCachedHeadlinesBundle>,
   regimeSnapshot?: ReturnType<typeof getRegimeSnapshot>,
@@ -96,6 +115,9 @@ export function getDeterministicMarketOpportunities(
     const alignedHeadline = headlines.find(headline =>
       headline.affectedAssets.includes(signal.pair)
     );
+    if (!shouldSurfaceDeterministicOpportunity(signal, !!alignedHeadline, regime)) {
+      continue;
+    }
 
     const instrument = getInstrument(signal.pair);
     const score =
@@ -308,6 +330,60 @@ function trimCommentary(text: string) {
   return `${normalized.slice(0, 217).trim()}...`;
 }
 
+function isWeakOpportunityTitle(title: string) {
+  const normalized = title.trim().toLowerCase();
+  return normalized.length < 6 || [
+    'divergence',
+    'breakout',
+    'continuation',
+    'reversal',
+    'momentum',
+    'event reprice',
+    'macro continuation',
+    'cross asset divergence',
+    'opportunity',
+    'trade',
+  ].includes(normalized);
+}
+
+function directionWord(direction: MarketOpportunity['directionBias'] | 'neutral') {
+  if (direction === 'long') return 'Bullish';
+  if (direction === 'short') return 'Bearish';
+  return 'Watch';
+}
+
+function buildOpportunityTitle(
+  title: string,
+  instrument: string,
+  direction: MarketOpportunity['directionBias'] | 'neutral',
+  theme?: string,
+) {
+  const cleanedTitle = title.trim();
+  if (cleanedTitle && !isWeakOpportunityTitle(cleanedTitle)) return cleanedTitle;
+
+  const readableInstrument = getInstrument(instrument)?.displayName || instrument;
+  const readableTheme = theme?.trim();
+  if (readableTheme) {
+    return `${readableInstrument} ${readableTheme}`;
+  }
+
+  return `${readableInstrument} ${directionWord(direction)} Setup`;
+}
+
+function buildOpportunityDetail(
+  commentary: string,
+  candidateSummary: string | undefined,
+  fallbackTrigger: string,
+) {
+  const primary = trimCommentary(commentary);
+  if (primary) return primary;
+
+  const summary = candidateSummary?.trim();
+  if (summary) return summary;
+
+  return fallbackTrigger;
+}
+
 function clearAIInsights() {
   cachedNarrative = '';
   cachedThemes = [];
@@ -345,11 +421,16 @@ export async function refreshOpportunityBoard(): Promise<void> {
   const minConfidence = Number(process.env.AI_OPPORTUNITY_MIN_CONFIDENCE || 60);
 
   if (!result.ok || !result.data) {
-    cachedOpportunities = deterministic.map(opportunity => ({
-      ...opportunity,
-      fallbackReason: result.error || 'opportunity ai unavailable',
-    }));
-    clearAIInsights();
+    const activeAIOpportunities = getActiveCachedAIOpportunities();
+    cachedOpportunities = activeAIOpportunities.length > 0
+      ? activeAIOpportunities
+      : deterministic.map(opportunity => ({
+          ...opportunity,
+          fallbackReason: result.error || 'opportunity ai unavailable',
+        }));
+    if (activeAIOpportunities.length === 0) {
+      clearAIInsights();
+    }
     lastAISignature = aiSignature;
     lastRefresh = Date.now();
     return;
@@ -390,10 +471,10 @@ export async function refreshOpportunityBoard(): Promise<void> {
       return [{
         id: item.candidateId,
         instrument: item.instrument,
-        displayName: item.title,
+        displayName: buildOpportunityTitle(item.title, item.instrument, item.direction, typeof item.theme === 'string' ? item.theme : undefined),
         directionBias: item.direction,
         setupType,
-        trigger: isSynthetic ? item.commentary : (candidate!.summary || item.commentary),
+        trigger: isSynthetic ? buildOpportunityDetail(item.commentary, undefined, item.instrument) : (candidate!.summary || item.commentary),
         confirmationSignals: isSynthetic
           ? item.supportingFactors.slice(0, 4)
           : candidate!.supportingFactors.slice(0, 4),
@@ -401,7 +482,7 @@ export async function refreshOpportunityBoard(): Promise<void> {
         urgency: item.urgency,
         staleAfter: item.staleAfter,
         score: item.score,
-        commentary: trimCommentary(item.commentary),
+        commentary: buildOpportunityDetail(item.commentary, candidate?.summary, isSynthetic ? item.instrument : candidate!.summary || item.instrument),
         supportingFactors: item.supportingFactors,
         sourceMix: item.sourceMix,
         confidence: item.confidence,
@@ -414,12 +495,20 @@ export async function refreshOpportunityBoard(): Promise<void> {
     })
     .slice(0, 12);
 
-  cachedOpportunities = aiOpportunities.length > 0
-    ? aiOpportunities
-    : deterministic.map(opportunity => ({
-        ...opportunity,
-        fallbackReason: 'opportunity ai returned no qualified opportunities',
-      }));
+  if (aiOpportunities.length > 0) {
+    cachedOpportunities = aiOpportunities;
+  } else {
+    const activeAIOpportunities = getActiveCachedAIOpportunities();
+    cachedOpportunities = activeAIOpportunities.length > 0
+      ? activeAIOpportunities
+      : deterministic.map(opportunity => ({
+          ...opportunity,
+          fallbackReason: 'opportunity ai returned no qualified opportunities',
+        }));
+    if (activeAIOpportunities.length === 0) {
+      clearAIInsights();
+    }
+  }
   lastAISignature = aiSignature;
   lastRefresh = Date.now();
 }

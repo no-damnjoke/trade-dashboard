@@ -24,7 +24,7 @@ export function OpportunityRow({ opportunity }: { opportunity: MarketOpportunity
       : 'Deterministic';
   const biasLabel = getBiasLabel(opportunity);
   const sourceSummary = opportunity.sourceMix?.join(' + ') || opportunity.confirmationSignals[0] || '';
-  const detailText = opportunity.commentary || opportunity.trigger;
+  const detailText = opportunity.commentary || opportunity.trigger || sourceSummary;
 
   return (
     <div class={`opp-row opp-row--${opportunity.directionBias}`}>
@@ -43,7 +43,8 @@ export function OpportunityRow({ opportunity }: { opportunity: MarketOpportunity
         )}
       </div>
       <div class="opp-row__meta">
-        <span>{LABELS[opportunity.setupType]}</span>
+        <span class="opp-row__type">{LABELS[opportunity.setupType]}</span>
+        <span class="opp-row__instrument mono">{opportunity.instrument}</span>
         <span class={`opp-row__bias opp-row__bias--${opportunity.directionBias}`}>{biasLabel}</span>
       </div>
       <div class="opp-row__trigger">{detailText}</div>

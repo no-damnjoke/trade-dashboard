@@ -70,9 +70,9 @@ const AI_BASE_URL = (
   'http://127.0.0.1:8765/v1'
 ).replace(/\/$/, '');
 const AI_API_KEY = process.env.AI_BRIDGE_API_KEY || process.env.LOCAL_AI_API_KEY || process.env.OPENAI_API_KEY || '';
-const HEADLINE_IMPACT_MODEL = process.env.AI_HEADLINE_MODEL || process.env.LOCAL_AI_MODEL || process.env.OPENAI_MODEL || 'gpt-4o-mini';
-const FX_SETUP_MODEL = process.env.AI_FX_SETUP_MODEL || HEADLINE_IMPACT_MODEL;
-const OPPORTUNITY_RANKER_MODEL = process.env.AI_OPPORTUNITY_MODEL || HEADLINE_IMPACT_MODEL;
+const HEADLINE_IMPACT_MODEL = process.env.AI_HEADLINE_MODEL || 'gpt-5.1-codex-mini';
+const FX_SETUP_MODEL = process.env.AI_FX_SETUP_MODEL || 'claude-sonnet-4-6';
+const OPPORTUNITY_RANKER_MODEL = process.env.AI_OPPORTUNITY_MODEL || 'gpt-5.1-codex-mini';
 
 const HEADLINE_REASONING_EFFORT = process.env.AI_HEADLINE_REASONING_EFFORT || 'low';
 const FX_SETUP_REASONING_EFFORT = process.env.AI_FX_SETUP_REASONING_EFFORT || 'medium';

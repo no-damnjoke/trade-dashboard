@@ -695,6 +695,8 @@ export async function evaluateOpportunities(snapshot: OpportunitySnapshot) {
     '   - For synthetic ideas: use candidateId format "synth-1", "synth-2", etc. Set isSynthetic=true.',
     '   - Synthetic ideas MUST use instruments from the provided heatmap or candidate data. Do not invent tickers.',
     '   - Each opportunity MUST include a "theme" field matching one of your identified themes.',
+    '   - Every opportunity title must be specific and tradable. Lead with the instrument and thesis, e.g. "NZD/USD USD-Weak Continuation" or "Gold Geopolitical Hedge Bid".',
+    '   - Never use generic one-word titles like "Divergence", "Breakout", "Continuation", "Momentum", or "Reversal".',
     '   - Use heatmap breadth to confirm or contradict regime signals.',
     '',
     '4. CONFLICTS: When sources disagree on an instrument or theme (e.g., bullish FX setup vs bearish headline), surface it as a conflict entry.',
