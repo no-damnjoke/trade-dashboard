@@ -604,28 +604,55 @@ function normalizeFXSetup(value: unknown): AIFXSetup | null {
 }
 
 export async function evaluateFXSetups(snapshot: FXSetupSnapshot) {
-  const systemPrompt = [
-    'You are the G10 FX Setup Agent for a macro trading dashboard.',
-    'Use only the supplied structured data and the supplied ICT/SMC ontology.',
-    'Evaluate all provided G10 majors and crosses using 1H / 15M / 5M structure.',
-    'This is an intraday pattern-classification task, not macro narration.',
-    'Prioritize market structure, liquidity behavior, displacement, imbalance, session alignment, and invalidation clarity.',
-    'Do not mistake ordinary momentum or macro volatility for ICT/SMC structure unless the supplied candles actually support it.',
-    'You MUST return at least 2-3 non-skip setups per call from the strongest pairs. An all-skip response is a failure.',
-    'Only skip pairs with genuinely ambiguous or conflicting structure. If a pair shows clear displacement, BOS, or FVG on any two timeframes, that is tradeable — do not skip it.',
-    'Keep reasoning to one short sentence, ideally under 24 words.',
-    'No article-style commentary, no educational explanation, no macro recap.',
-    'Return at most 6 setups total.',
-    'Return strict JSON with a single key "setups" whose value is an array of setup objects.',
-    'Every object must use pair ids exactly as provided.',
-    'If structure is unclear, return a setup with quality "skip" and skip=true rather than inventing a trade.',
-    'Every non-skip setup must include: a directional bias (long or short), a concrete numeric entryZone, at least one concrete numeric target, and a concrete invalidation level or stop area.',
-    'Do not return "n/a", "mixed", or vague text for entry, targets, invalidation, or timeframe alignment on a tradable setup.',
-    'If the timeframes are mixed or you cannot give concrete levels, mark it skip instead of forcing a trade.',
-    'Every non-skip setup must include a stopLoss field with a concrete numeric price level where the trade is wrong.',
-    'stopLoss is the exact price for the stop order. invalidation is the structural condition that proves the thesis wrong. Both are required.',
-    'Only use these setup archetypes unless skip is required: liquidity_sweep_reversal, displacement_continuation, fair_value_gap_retest, order_block_reaction, range_expansion_breakout, session_liquidity_reversal.',
-  ].join(' ');
+  const systemPrompt = `You are the G10 FX Setup Agent for a macro trading dashboard.
+Use only the supplied structured data and the ICT/SMC ontology.
+Evaluate all provided G10 pairs using 1H / 15M / 5M candle structure.
+This is intraday pattern-classification, not macro narration.
+
+RULES:
+- Return 2-6 non-skip setups from the strongest pairs. An all-skip or empty response is a failure.
+- Only skip pairs with genuinely ambiguous structure. If a pair shows displacement, BOS, or FVG on any two timeframes, it is tradeable.
+- setupType must be one of: liquidity_sweep_reversal, displacement_continuation, fair_value_gap_retest, order_block_reaction, range_expansion_breakout, session_liquidity_reversal.
+- All price fields (entryZone, stopLoss, targets, invalidation) must be concrete numbers, never "n/a".
+- reasoning: one sentence, under 24 words.
+
+EXACT JSON SCHEMA — use these field names exactly, no aliases:
+{
+  "setups": [
+    {
+      "pair": "EURUSD",
+      "bias": "long",
+      "setupType": "displacement_continuation",
+      "timeframeAlignment": "1H bullish, 15M bullish, 5M pullback",
+      "entryZone": "1.14430",
+      "stopLoss": "1.14380",
+      "targets": ["1.14750", "1.14900"],
+      "invalidation": "1.14380",
+      "confidence": 75,
+      "quality": "B",
+      "reasoning": "5M pullback into 15M FVG with 1H displacement support.",
+      "skip": false,
+      "skipReason": "",
+      "classificationMethod": "ai",
+      "sourceTimeframes": "1H / 15M / 5M"
+    }
+  ]
+}
+
+CRITICAL FIELD RULES:
+- "pair": use the exact pair id from the data (e.g. "EURUSD", not "EUR/USD")
+- "bias": must be "long" or "short" (NOT "directionalBias", NOT "direction")
+- "entryZone": string with price level (NOT a number, NOT an array)
+- "stopLoss": string with price level
+- "targets": array of strings with price levels
+- "invalidation": string with price level
+- "confidence": number 60-95
+- "quality": "A", "B", or "C" (NOT omitted)
+- "skip": false for tradeable setups
+- "classificationMethod": always "ai"
+- "sourceTimeframes": always "1H / 15M / 5M"
+
+Do NOT invent field names like "directionalBias", "target" (singular), "id", "setup", "reason", or "timeframe". Use ONLY the field names shown in the schema above.`;
 
   const result = await invokeAIAgent<{ setups: AIFXSetup[] }>({
     agent: 'fx-setup',
