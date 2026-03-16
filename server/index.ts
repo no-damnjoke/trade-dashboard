@@ -84,7 +84,11 @@ function scheduleNextDigest() {
   }
   const delay = target.getTime() - now.getTime();
   setTimeout(() => {
-    writeDigest();
+    try {
+      writeDigest();
+    } catch (error) {
+      console.error('[Digest] Failed to write daily digest:', (error as Error).message);
+    }
     scheduleNextDigest();
   }, delay);
 }

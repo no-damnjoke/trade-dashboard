@@ -301,7 +301,8 @@ export async function refreshOpportunityBoard(): Promise<void> {
       return;
     }
   } else {
-    if (cachedOpportunities.length > 0 && Date.now() - lastRefresh < OPPORTUNITY_AI_CACHE_TTL_MS) {
+    // Skip if inputs haven't changed and cache is fresh
+    if (aiSignature === lastAISignature && cachedOpportunities.length > 0 && Date.now() - lastRefresh < OPPORTUNITY_AI_CACHE_TTL_MS) {
       return;
     }
     if (timeSinceLastAI < OPPORTUNITY_AI_STEADY_INTERVAL_MS) {
@@ -401,6 +402,7 @@ export async function refreshOpportunityBoard(): Promise<void> {
     if (activeAIOpportunities.length === 0) clearAIInsights();
   }
   lastAISignature = aiSignature;
+  lastReactiveSignature = reactiveSignature;
   lastRefresh = Date.now();
 }
 
