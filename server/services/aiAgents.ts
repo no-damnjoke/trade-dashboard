@@ -570,6 +570,9 @@ export async function evaluateFXSetups(snapshot: FXSetupSnapshot) {
     'Return strict JSON with a single key "setups" whose value is an array of setup objects.',
     'Every object must use pair ids exactly as provided.',
     'If structure is unclear, return a setup with quality "skip" and skip=true rather than inventing a trade.',
+    'Every non-skip setup must include: a directional bias (long or short), a concrete numeric entryZone, at least one concrete numeric target, and a concrete invalidation level or stop area.',
+    'Do not return "n/a", "mixed", or vague text for entry, targets, invalidation, or timeframe alignment on a tradable setup.',
+    'If the timeframes are mixed or you cannot give concrete levels, mark it skip instead of forcing a trade.',
     'Only use these setup archetypes unless skip is required: liquidity_sweep_reversal, displacement_continuation, fair_value_gap_retest, order_block_reaction, range_expansion_breakout, session_liquidity_reversal.',
   ].join(' ');
 

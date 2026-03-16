@@ -420,7 +420,16 @@ export async function refreshFXSetups(): Promise<void> {
     }
 
     const aiSetups = result.data
-      .filter(setup => !setup.skip && setup.quality !== 'skip' && setup.confidence >= minConfidence)
+      .filter(setup =>
+        !setup.skip &&
+        setup.quality !== 'skip' &&
+        setup.confidence >= minConfidence &&
+        setup.bias !== 'neutral' &&
+        setup.entryZone !== 'n/a' &&
+        setup.invalidation !== 'n/a' &&
+        setup.targets.length > 0 &&
+        setup.timeframeAlignment.toLowerCase() !== 'mixed'
+      )
       .map(toTechnicalSetup)
       .slice(0, 8);
 

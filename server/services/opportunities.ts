@@ -457,6 +457,7 @@ export async function refreshOpportunityBoard(): Promise<void> {
 
       if (!candidate && !isSynthetic) return [];
       if (isSynthetic && !getInstrument(item.instrument)) return [];
+      if (isSynthetic && (item.confidence < 70 || item.urgency === 'low')) return [];
 
       const setupType: MarketOpportunity['setupType'] = isSynthetic
         ? 'cross_asset_divergence'

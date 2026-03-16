@@ -63,6 +63,14 @@
   font-size: var(--text-sm);
   transition: background var(--fast), color var(--fast);
 }
+
+.header__btn--wide {
+  width: auto;
+  padding: 0 10px;
+  font-size: var(--text-xs);
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+}
 .header__btn:hover {
   background: var(--bg-hover);
   color: var(--text-primary);

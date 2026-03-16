@@ -20,6 +20,8 @@ export function SetupRow({ setup }: { setup: TechnicalSetup }) {
     : setup.fallbackReason
       ? 'Deterministic Fallback'
       : 'Deterministic';
+  const entryText = setup.entryZone || 'Awaiting entry';
+  const targetText = setup.targets && setup.targets.length > 0 ? setup.targets.join(' / ') : 'Awaiting targets';
   return (
     <div class={`setup-row setup-row--${setup.direction}`}>
       <div class="setup-row__header">
@@ -35,8 +37,22 @@ export function SetupRow({ setup }: { setup: TechnicalSetup }) {
           <span key={factor} class="setup-row__factor">{factor}</span>
         ))}
       </div>
+      <div class="setup-row__levels">
+        <div class="setup-row__level-block">
+          <span class="setup-row__level-label">Entry</span>
+          <span class="setup-row__level-value mono">{entryText}</span>
+        </div>
+        <div class="setup-row__level-block">
+          <span class="setup-row__level-label">Targets</span>
+          <span class="setup-row__level-value mono">{targetText}</span>
+        </div>
+        <div class="setup-row__level-block">
+          <span class="setup-row__level-label">Invalidation</span>
+          <span class="setup-row__level-value">{setup.invalidation}</span>
+        </div>
+      </div>
       <div class="setup-row__footer">
-        <span>{setup.timeframeAlignment || setup.invalidation}</span>
+        <span>{setup.timeframeAlignment || setup.sourceTimeframes || setup.invalidation}</span>
         <span class="mono">stale {formatRelativeTime(setup.staleAfter)}</span>
       </div>
     </div>

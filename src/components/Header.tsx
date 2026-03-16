@@ -1,10 +1,12 @@
 import { useState, useEffect } from 'preact/hooks';
 import { useApp } from '../context/AppContext';
+import { useDashboardLayout } from '../context/DashboardLayoutContext';
 import { formatUTC } from '../utils/time';
 import './Header.css';
 
 export function Header() {
   const { alerts, toggleAlerts, togglePalette, toggleHelp } = useApp();
+  const dashboardLayout = useDashboardLayout();
   const [clock, setClock] = useState(formatUTC());
   const unreadAlerts = alerts.filter(a => Date.now() - a.timestamp < 300_000).length;
 
@@ -22,6 +24,15 @@ export function Header() {
         </span>
       </div>
       <div class="header__right">
+        {dashboardLayout?.isDesktop && (
+          <button
+            class="header__btn header__btn--wide"
+            onClick={dashboardLayout.resetLayout}
+            title="Reset panel layout"
+          >
+            Reset Layout
+          </button>
+        )}
         <button
           class="header__btn header__alert-btn"
           onClick={toggleAlerts}

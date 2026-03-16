@@ -15,6 +15,7 @@ import { AlertsDrawer } from './AlertsDrawer';
 import { usePolling } from '../hooks/usePolling';
 import { fetchJSON } from '../services/api';
 import { useApp } from '../context/AppContext';
+import { DashboardLayoutProvider, useDashboardLayout } from '../context/DashboardLayoutContext';
 import type { Alert } from '../types';
 import './Layout.css';
 
@@ -22,8 +23,9 @@ interface AlertsResponse {
   alerts: Alert[];
 }
 
-export function Layout() {
+function LayoutFrame() {
   const { setAlerts } = useApp();
+  const dashboardLayout = useDashboardLayout();
   const { data } = usePolling<AlertsResponse>(() => fetchJSON('/alerts'), 5_000);
 
   useEffect(() => {
@@ -36,22 +38,29 @@ export function Layout() {
     <div class="layout">
       <Header />
       <Heatmap />
-      <main class="layout__grid">
-        <div class="layout__left">
-          <HeadlinesPanel />
-          <VelocityPanel />
-          <SetupsPanel />
-          <PredictionPanel />
-        </div>
-        <div class="layout__right">
-          <WatchlistPanel />
-          <CalendarPanel />
-        </div>
+      <main
+        ref={dashboardLayout?.containerRef}
+        class={`layout__grid ${dashboardLayout?.isDesktop ? 'layout__grid--desktop' : ''}`}
+      >
+        <HeadlinesPanel />
+        <VelocityPanel />
+        <SetupsPanel />
+        <PredictionPanel />
+        <WatchlistPanel />
+        <CalendarPanel />
       </main>
       <StatusBar />
       <CommandPalette />
       <HelpOverlay />
       <AlertsDrawer />
     </div>
+  );
+}
+
+export function Layout() {
+  return (
+    <DashboardLayoutProvider>
+      <LayoutFrame />
+    </DashboardLayoutProvider>
   );
 }
