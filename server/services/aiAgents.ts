@@ -472,7 +472,9 @@ function formatTimeframeAlignment(value: unknown) {
 
 function formatEntryZone(raw: Record<string, unknown>) {
   if (typeof raw.entryZone === 'string') return raw.entryZone;
+  if (typeof raw.entryZone === 'number') return formatNumber(raw.entryZone);
   if (typeof raw.entry === 'string') return raw.entry;
+  if (typeof raw.entry === 'number') return formatNumber(raw.entry);
   const entrySource = raw.entryZone && typeof raw.entryZone === 'object'
     ? raw.entryZone
     : raw.entry;
@@ -489,6 +491,7 @@ function formatEntryZone(raw: Record<string, unknown>) {
 
 function formatInvalidation(raw: Record<string, unknown>) {
   if (typeof raw.invalidation === 'string') return raw.invalidation;
+  if (typeof raw.invalidation === 'number') return formatNumber(raw.invalidation);
   const invalidation = raw.invalidation;
   if (!invalidation || typeof invalidation !== 'object') return 'n/a';
   const invalidationRecord = invalidation as Record<string, unknown>;
@@ -509,9 +512,18 @@ function formatStopLoss(raw: Record<string, unknown>) {
 
 function formatTargets(raw: Record<string, unknown>) {
   if (Array.isArray(raw.targets)) {
-    return raw.targets.filter((target): target is string => typeof target === 'string');
+    return raw.targets
+      .map(t => typeof t === 'number' ? formatNumber(t) : t)
+      .filter((t): t is string => typeof t === 'string');
   }
   const target = raw.target;
+  if (typeof target === 'number') return [formatNumber(target)];
+  if (typeof target === 'string') return [target];
+  if (Array.isArray(target)) {
+    return target
+      .map(t => typeof t === 'number' ? formatNumber(t) : t)
+      .filter((t): t is string => typeof t === 'string');
+  }
   if (!target || typeof target !== 'object') return [];
   const targetRecord = target as Record<string, unknown>;
   if (typeof targetRecord.level === 'number') {
