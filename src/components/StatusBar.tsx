@@ -1,3 +1,4 @@
+import { useState } from 'preact/hooks';
 import { usePolling } from '../hooks/usePolling';
 import { fetchJSON } from '../services/api';
 import { formatRelativeTime } from '../utils/time';
@@ -6,9 +7,21 @@ import './StatusBar.css';
 
 export function StatusBar() {
   const { data, lastUpdated } = usePolling<MarketState>(() => fetchJSON('/market-state'), 10_000);
+  const [toggling, setToggling] = useState(false);
   const providers = data?.headlines.providers ?? [];
   const telegram = providers.find(provider => provider.id === 'telegram');
   const x = providers.find(provider => provider.id === 'x');
+
+  const aiEnabled = data?.aiProvider.enabled && data?.aiProvider.available;
+
+  async function toggleAI() {
+    setToggling(true);
+    try {
+      await fetch('/api/ai-status/toggle', { method: 'POST' });
+    } finally {
+      setToggling(false);
+    }
+  }
 
   return (
     <footer class="statusbar">
@@ -26,11 +39,16 @@ export function StatusBar() {
           ok={!!data?.regime}
           detail={data?.regime.usdBias ?? 'mixed'}
         />
-        <StatusDot
-          label="AI"
-          ok={data?.aiProvider.available ?? true}
-          detail={data?.aiProvider.enabled ? data.aiProvider.provider : 'deterministic'}
-        />
+        <button
+          class={`statusbar__ai-toggle ${aiEnabled ? 'statusbar__ai-toggle--on' : 'statusbar__ai-toggle--off'}`}
+          onClick={toggleAI}
+          disabled={toggling}
+          title={aiEnabled ? 'Click to pause AI (saves API costs)' : 'Click to resume AI agents'}
+        >
+          <span class={`statusbar__dot ${aiEnabled ? 'statusbar__dot--ok' : 'statusbar__dot--err'}`} />
+          <span class="statusbar__label">AI</span>
+          <span class="statusbar__detail mono">{aiEnabled ? 'on' : 'off'}</span>
+        </button>
       </div>
       <div class="statusbar__right">
         {data?.headlines.lastUpdated ? (

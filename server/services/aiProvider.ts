@@ -174,8 +174,18 @@ function extractJSONObject(raw: string) {
   return stripped;
 }
 
+let aiKillSwitch = false;
+
 function isAIEnabled() {
-  return AI_PROVIDER !== 'deterministic';
+  return AI_PROVIDER !== 'deterministic' && !aiKillSwitch;
+}
+
+export function setAIEnabled(enabled: boolean) {
+  aiKillSwitch = !enabled;
+}
+
+export function getAIKillSwitch() {
+  return aiKillSwitch;
 }
 
 function recordLatency(ms: number) {
