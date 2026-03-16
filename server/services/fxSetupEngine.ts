@@ -367,8 +367,7 @@ export async function refreshFXSetups(): Promise<void> {
         setup.entryZone !== 'n/a' &&
         setup.invalidation !== 'n/a' &&
         setup.stopLoss !== 'n/a' &&
-        setup.targets.length > 0 &&
-        setup.timeframeAlignment.toLowerCase() !== 'mixed'
+        setup.targets.length > 0
       )
       .map(toTechnicalSetup)
       .filter(setup => setup.riskRewardRatio == null || setup.riskRewardRatio >= 1.0)
