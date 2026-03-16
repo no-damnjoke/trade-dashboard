@@ -54,8 +54,8 @@ export function WatchlistPanel() {
       {conflicts.length > 0 && <ConflictSection conflicts={conflicts} />}
       {opportunities.length === 0 ? (
         <div class="panel-empty">
-          <span class="panel-empty__text">No live opportunities</span>
-          <span class="panel-empty__sub">Waiting for catalyst and confirmation to align</span>
+          <span class="panel-empty__text">No AI opportunities available</span>
+          <span class="panel-empty__sub">Waiting for market data to build a narrative</span>
         </div>
       ) : (
         grouped.map(group => (

@@ -9,28 +9,22 @@ const LABELS: Record<TechnicalSetup['type'], string> = {
   usd_regime_impulse: 'USD Regime Impulse',
 };
 
-function getDirectionLabel(setup: TechnicalSetup) {
-  return setup.direction === 'long' ? 'Long' : 'Short';
-}
-
 export function SetupRow({ setup }: { setup: TechnicalSetup }) {
   const typeLabel = LABELS[setup.type as keyof typeof LABELS] || setup.type;
-  const provenance = setup.classificationMethod === 'ai'
-    ? 'AI'
-    : setup.fallbackReason
-      ? 'Deterministic Fallback'
-      : 'Deterministic';
-  const entryText = setup.entryZone || 'Awaiting entry';
-  const targetText = setup.targets && setup.targets.length > 0 ? setup.targets.join(' / ') : 'Awaiting targets';
   return (
     <div class={`setup-row setup-row--${setup.direction}`}>
       <div class="setup-row__header">
         <span class="setup-row__type">{typeLabel}</span>
         <span class="setup-row__pair mono">{setup.pair}</span>
         {setup.quality && <span class="setup-row__badge">{setup.quality}</span>}
-        <span class="setup-row__badge">{getDirectionLabel(setup)}</span>
-        <span class="setup-row__badge">{provenance}</span>
+        <span class={`setup-row__badge setup-row__badge--${setup.direction}`}>
+          {setup.direction === 'long' ? '\u2191 Long' : '\u2193 Short'}
+        </span>
+        <span class="setup-row__badge">AI</span>
         <span class="setup-row__confidence mono">{setup.confidence}%</span>
+        {setup.riskRewardRatio != null && (
+          <span class="setup-row__rr">{setup.riskRewardRatio.toFixed(1)}R</span>
+        )}
       </div>
       <div class="setup-row__factors">
         {setup.supportingFactors.slice(0, 3).map(factor => (
@@ -40,15 +34,15 @@ export function SetupRow({ setup }: { setup: TechnicalSetup }) {
       <div class="setup-row__levels">
         <div class="setup-row__level-block">
           <span class="setup-row__level-label">Entry</span>
-          <span class="setup-row__level-value mono">{entryText}</span>
+          <span class="setup-row__level-value mono">{setup.entryZone ?? '\u2014'}</span>
+        </div>
+        <div class="setup-row__level-block">
+          <span class="setup-row__level-label">Stop Loss</span>
+          <span class="setup-row__level-value setup-row__level-value--sl mono">{setup.stopLoss ?? '\u2014'}</span>
         </div>
         <div class="setup-row__level-block">
           <span class="setup-row__level-label">Targets</span>
-          <span class="setup-row__level-value mono">{targetText}</span>
-        </div>
-        <div class="setup-row__level-block">
-          <span class="setup-row__level-label">Invalidation</span>
-          <span class="setup-row__level-value">{setup.invalidation}</span>
+          <span class="setup-row__level-value mono">{setup.targets?.join(' / ') ?? '\u2014'}</span>
         </div>
       </div>
       <div class="setup-row__footer">

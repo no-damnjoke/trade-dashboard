@@ -17,11 +17,6 @@ function getBiasLabel(opportunity: MarketOpportunity) {
 }
 
 export function OpportunityRow({ opportunity }: { opportunity: MarketOpportunity }) {
-  const provenance = opportunity.classificationMethod === 'ai'
-    ? 'AI'
-    : opportunity.fallbackReason
-      ? 'Deterministic Fallback'
-      : 'Deterministic';
   const biasLabel = getBiasLabel(opportunity);
   const sourceSummary = opportunity.sourceMix?.join(' + ') || opportunity.confirmationSignals[0] || '';
   const detailText = opportunity.commentary || opportunity.trigger || sourceSummary;
@@ -30,11 +25,14 @@ export function OpportunityRow({ opportunity }: { opportunity: MarketOpportunity
     <div class={`opp-row opp-row--${opportunity.directionBias}`}>
       <div class="opp-row__header">
         <span class="opp-row__name">{opportunity.displayName}</span>
-        <span class="opp-row__signal">{provenance}</span>
+        <span class="opp-row__signal">AI</span>
         {typeof opportunity.confidence === 'number' && (
           <span class="opp-row__signal">{opportunity.confidence}%</span>
         )}
         <span class={`opp-row__urgency opp-row__urgency--${opportunity.urgency}`}>{opportunity.urgency}</span>
+        {opportunity.theme && (
+          <span class="opp-row__theme">{opportunity.theme}</span>
+        )}
         {opportunity.isSynthetic && (
           <span class="opp-row__signal opp-row__signal--synth">Synth</span>
         )}
@@ -48,6 +46,26 @@ export function OpportunityRow({ opportunity }: { opportunity: MarketOpportunity
         <span class={`opp-row__bias opp-row__bias--${opportunity.directionBias}`}>{biasLabel}</span>
       </div>
       <div class="opp-row__trigger">{detailText}</div>
+      {opportunity.keyLevels && (opportunity.keyLevels.support.length > 0 || opportunity.keyLevels.resistance.length > 0) && (
+        <div class="opp-row__levels">
+          {opportunity.keyLevels.support.length > 0 && (
+            <div class="opp-row__levels-group">
+              <span class="opp-row__levels-label">S</span>
+              {opportunity.keyLevels.support.map(l => (
+                <span key={l} class="opp-row__level opp-row__level--support mono">{l}</span>
+              ))}
+            </div>
+          )}
+          {opportunity.keyLevels.resistance.length > 0 && (
+            <div class="opp-row__levels-group">
+              <span class="opp-row__levels-label">R</span>
+              {opportunity.keyLevels.resistance.map(l => (
+                <span key={l} class="opp-row__level opp-row__level--resistance mono">{l}</span>
+              ))}
+            </div>
+          )}
+        </div>
+      )}
       <div class="opp-row__footer">
         <span class="opp-row__confirmation">{sourceSummary}</span>
         <span class="mono">{formatRelativeTime(opportunity.staleAfter)}</span>

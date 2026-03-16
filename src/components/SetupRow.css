@@ -74,6 +74,27 @@
   margin-left: auto;
 }
 
+.setup-row__rr {
+  font-size: var(--text-xs);
+  font-weight: var(--weight-bold);
+  color: var(--accent);
+  background: rgba(59, 130, 246, 0.14);
+  padding: 2px 6px;
+  border-radius: var(--radius-sm);
+}
+
+.setup-row__badge--long {
+  color: var(--positive);
+}
+
+.setup-row__badge--short {
+  color: var(--negative);
+}
+
+.setup-row__level-value--sl {
+  color: var(--negative);
+}
+
 .setup-row__factor {
   font-size: var(--text-xs);
   color: var(--text-primary);
