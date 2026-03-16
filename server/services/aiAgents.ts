@@ -535,21 +535,26 @@ function normalizeFXSetup(value: unknown): AIFXSetup | null {
     : typeof raw.direction === 'string'
       ? raw.direction.toLowerCase()
       : raw.bias;
-  const pair = typeof raw.pair === 'string' ? raw.pair.toUpperCase() : raw.pair;
+  const rawPair = raw.pair ?? raw.id;
+  const pair = typeof rawPair === 'string' ? rawPair.toUpperCase() : rawPair;
   const skip = typeof raw.skip === 'boolean' ? raw.skip : quality === 'skip';
   const sourceTimeframes = typeof raw.sourceTimeframes === 'string'
     ? raw.sourceTimeframes.toUpperCase().replace(/\s+/g, ' ').trim()
     : raw.sourceTimeframes;
   const setupType = typeof raw.setupType === 'string'
     ? raw.setupType
-    : typeof raw.archetype === 'string'
-      ? raw.archetype
-      : typeof raw.pattern === 'string'
-        ? raw.pattern
-      : 'unknown';
+    : typeof raw.setup === 'string'
+      ? raw.setup
+      : typeof raw.archetype === 'string'
+        ? raw.archetype
+        : typeof raw.pattern === 'string'
+          ? raw.pattern
+        : 'unknown';
   const timeframeAlignment = typeof raw.timeframeAlignment === 'string'
     ? raw.timeframeAlignment
-    : formatTimeframeAlignment(raw.timeframeAlignment) ?? formatTimeframeAlignment(raw.timeframeBias) ?? 'mixed';
+    : typeof raw.timeframe === 'string'
+      ? raw.timeframe
+      : formatTimeframeAlignment(raw.timeframeAlignment) ?? formatTimeframeAlignment(raw.timeframeBias) ?? 'mixed';
 
   const normalized: AIFXSetup = {
     pair: typeof pair === 'string' ? pair : '',
