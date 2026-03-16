@@ -635,26 +635,27 @@ export async function evaluateFXSetups(snapshot: FXSetupSnapshot) {
 
 function isAIOpportunityResult(value: unknown, candidateIds: Set<string>): value is AIOpportunityResult {
   if (!value || typeof value !== 'object') return false;
-  const opportunity = value as AIOpportunityResult;
-  const validId = typeof opportunity.candidateId === 'string' &&
-    (candidateIds.has(opportunity.candidateId) || opportunity.candidateId.startsWith('synth-'));
-  return (
-    validId &&
-    typeof opportunity.title === 'string' &&
-    typeof opportunity.instrument === 'string' &&
-    ['long', 'short', 'neutral'].includes(opportunity.direction) &&
-    typeof opportunity.score === 'number' &&
-    ['high', 'medium', 'low'].includes(opportunity.urgency) &&
-    typeof opportunity.commentary === 'string' &&
-    Array.isArray(opportunity.supportingFactors) &&
-    opportunity.supportingFactors.every(factor => typeof factor === 'string') &&
-    typeof opportunity.invalidation === 'string' &&
-    typeof opportunity.staleAfter === 'number' &&
-    Array.isArray(opportunity.sourceMix) &&
-    opportunity.sourceMix.every(item => typeof item === 'string') &&
-    isConfidence(opportunity.confidence) &&
-    opportunity.classificationMethod === 'ai'
-  );
+  const o = value as AIOpportunityResult;
+  const checks: Array<[string, boolean]> = [
+    ['candidateId', typeof o.candidateId === 'string' && (candidateIds.has(o.candidateId) || o.candidateId.startsWith('synth-'))],
+    ['title', typeof o.title === 'string'],
+    ['instrument', typeof o.instrument === 'string' && o.instrument.length > 0],
+    ['direction', ['long', 'short', 'neutral'].includes(o.direction)],
+    ['score', typeof o.score === 'number'],
+    ['urgency', ['high', 'medium', 'low'].includes(o.urgency)],
+    ['commentary', typeof o.commentary === 'string'],
+    ['supportingFactors', Array.isArray(o.supportingFactors)],
+    ['invalidation', typeof o.invalidation === 'string'],
+    ['staleAfter', typeof o.staleAfter === 'number'],
+    ['sourceMix', Array.isArray(o.sourceMix)],
+    ['confidence', isConfidence(o.confidence)],
+    ['classificationMethod', o.classificationMethod === 'ai'],
+  ];
+  const failed = checks.filter(([, ok]) => !ok);
+  if (failed.length > 0) {
+    console.log(`[Opportunities AI] validation failed for ${o.candidateId}: ${failed.map(([name]) => name).join(', ')}`);
+  }
+  return failed.length === 0;
 }
 
 function normalizeOpportunityResult(value: unknown, candidateIds: Set<string>): AIOpportunityResult | null {
