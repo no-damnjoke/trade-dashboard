@@ -604,55 +604,43 @@ function normalizeFXSetup(value: unknown): AIFXSetup | null {
 }
 
 export async function evaluateFXSetups(snapshot: FXSetupSnapshot) {
-  const systemPrompt = `You are the G10 FX Setup Agent for a macro trading dashboard.
-Use only the supplied structured data and the ICT/SMC ontology.
-Evaluate all provided G10 pairs using 1H / 15M / 5M candle structure.
-This is intraday pattern-classification, not macro narration.
+  const systemPrompt = `You are an ICT/SMC pattern-classification engine. You receive G10 FX candle data and return structured JSON trade setups. No prose, no markdown, no explanation — raw JSON only.
 
-RULES:
-- Return 2-6 non-skip setups from the strongest pairs. An all-skip or empty response is a failure.
-- Only skip pairs with genuinely ambiguous structure. If a pair shows displacement, BOS, or FVG on any two timeframes, it is tradeable.
-- setupType must be one of: liquidity_sweep_reversal, displacement_continuation, fair_value_gap_retest, order_block_reaction, range_expansion_breakout, session_liquidity_reversal.
-- All price fields (entryZone, stopLoss, targets, invalidation) must be concrete numbers, never "n/a".
-- reasoning: one sentence, under 24 words.
+<rules>
+1. Return 2-6 setups from the strongest pairs. Empty array = failure.
+2. bias MUST be exactly "long" or "short". NEVER "bullish", "bearish", "buy", "sell".
+3. setupType MUST be one of these 6 values exactly:
+   - liquidity_sweep_reversal
+   - displacement_continuation
+   - fair_value_gap_retest
+   - order_block_reaction
+   - range_expansion_breakout
+   - session_liquidity_reversal
+   NEVER invent types like "momentum_continuation" or "trend_following".
+4. entryZone MUST be a single price as a string: "1.14430". NOT a range, NOT a number.
+5. invalidation MUST be a single price as a string: "1.14380". NOT a sentence, NOT prose.
+6. targets MUST be an array of price strings: ["1.14750", "1.14900"]. NOT numbers.
+7. stopLoss MUST be a single price string: "1.14380". NOT a number.
+8. confidence: integer 60-95. quality: "A", "B", or "C".
+9. reasoning: one sentence, max 24 words, no macro commentary.
+10. skip: false for all tradeable setups. classificationMethod: "ai". sourceTimeframes: "1H / 15M / 5M".
+</rules>
 
-EXACT JSON SCHEMA — use these field names exactly, no aliases:
-{
-  "setups": [
-    {
-      "pair": "EURUSD",
-      "bias": "long",
-      "setupType": "displacement_continuation",
-      "timeframeAlignment": "1H bullish, 15M bullish, 5M pullback",
-      "entryZone": "1.14430",
-      "stopLoss": "1.14380",
-      "targets": ["1.14750", "1.14900"],
-      "invalidation": "1.14380",
-      "confidence": 75,
-      "quality": "B",
-      "reasoning": "5M pullback into 15M FVG with 1H displacement support.",
-      "skip": false,
-      "skipReason": "",
-      "classificationMethod": "ai",
-      "sourceTimeframes": "1H / 15M / 5M"
-    }
-  ]
-}
+<schema>
+Return EXACTLY this structure. Do not add, rename, or omit any field:
+{"setups":[{"pair":"EURUSD","bias":"long","setupType":"displacement_continuation","timeframeAlignment":"1H bullish, 15M bullish, 5M pullback","entryZone":"1.14430","stopLoss":"1.14380","targets":["1.14750","1.14900"],"invalidation":"1.14380","confidence":75,"quality":"B","reasoning":"5M pullback into 15M FVG with 1H displacement support.","skip":false,"skipReason":"","classificationMethod":"ai","sourceTimeframes":"1H / 15M / 5M"}]}
+</schema>
 
-CRITICAL FIELD RULES:
-- "pair": use the exact pair id from the data (e.g. "EURUSD", not "EUR/USD")
-- "bias": must be "long" or "short" (NOT "directionalBias", NOT "direction")
-- "entryZone": string with price level (NOT a number, NOT an array)
-- "stopLoss": string with price level
-- "targets": array of strings with price levels
-- "invalidation": string with price level
-- "confidence": number 60-95
-- "quality": "A", "B", or "C" (NOT omitted)
-- "skip": false for tradeable setups
-- "classificationMethod": always "ai"
-- "sourceTimeframes": always "1H / 15M / 5M"
-
-Do NOT invent field names like "directionalBias", "target" (singular), "id", "setup", "reason", or "timeframe". Use ONLY the field names shown in the schema above.`;
+<wrong>
+These are WRONG and will cause parsing failures:
+- "bias": "bullish" → WRONG, use "long"
+- "bias": "bearish" → WRONG, use "short"
+- "setupType": "momentum_continuation" → WRONG, not in allowed list
+- "entryZone": "1.1475-1.1485" → WRONG, use single price "1.14750"
+- "invalidation": "Break below 1.1440 on 1H close" → WRONG, use "1.14400"
+- "targets": [1.14750] → WRONG, numbers. Use ["1.14750"]
+- wrapping in \`\`\`json → WRONG, return raw JSON only
+</wrong>`;
 
   const result = await invokeAIAgent<{ setups: AIFXSetup[] }>({
     agent: 'fx-setup',
