@@ -66,8 +66,18 @@ app.get('/logs', (_req, res) => {
   res.sendFile(path.join(__dirname, 'views', 'activityLog.html'));
 });
 
-app.use(express.static(distPath));
+// Static assets (JS/CSS) have content hashes — cache aggressively
+app.use(express.static(distPath, {
+  maxAge: '7d',
+  setHeaders(res, filePath) {
+    // HTML must never be cached — it references hashed asset URLs
+    if (filePath.endsWith('.html')) {
+      res.setHeader('Cache-Control', 'no-cache, no-store, must-revalidate');
+    }
+  },
+}));
 app.get('*', (_req, res) => {
+  res.setHeader('Cache-Control', 'no-cache, no-store, must-revalidate');
   res.sendFile(path.join(distPath, 'index.html'));
 });
 
