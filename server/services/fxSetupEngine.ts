@@ -308,7 +308,7 @@ function toTechnicalSetup(setup: AIFXSetup): TechnicalSetup {
     direction: setup.bias === 'short' ? 'short' : 'long',
     confidence: setup.confidence,
     invalidation: setup.invalidation,
-    supportingFactors: [setup.reasoning, `${setup.quality} quality`, setup.entryZone].filter(Boolean),
+    supportingFactors: [setup.reasoning].filter(Boolean),
     staleAfter: Date.now() + 20 * 60_000,
     entryZone: setup.entryZone,
     targets: setup.targets,

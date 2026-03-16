@@ -43,7 +43,6 @@ export function SetupRow({ setup }: { setup: TechnicalSetup }) {
         </div>
       </div>
       <div class="setup-row__footer">
-        <span>{setup.timeframeAlignment || setup.sourceTimeframes || setup.invalidation}</span>
         <span class="mono">stale {formatRelativeTime(setup.staleAfter)}</span>
       </div>
     </div>

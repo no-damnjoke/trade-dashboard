@@ -222,8 +222,8 @@ function buildReactiveSignature(snapshot: OpportunitySnapshot) {
 
 function trimCommentary(text: string) {
   const normalized = text.replace(/\s+/g, ' ').trim();
-  if (normalized.length <= 220) return normalized;
-  return `${normalized.slice(0, 217).trim()}...`;
+  if (normalized.length <= 400) return normalized;
+  return `${normalized.slice(0, 397).trim()}...`;
 }
 
 function isWeakOpportunityTitle(title: string) {

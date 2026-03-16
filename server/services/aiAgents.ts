@@ -701,7 +701,7 @@ function normalizeOpportunityResult(value: unknown, candidateIds: Set<string>): 
     score: typeof raw.score === 'number' && Number.isFinite(raw.score) ? raw.score : 0,
     urgency: urgency === 'high' || urgency === 'medium' || urgency === 'low' ? urgency : 'low',
     commentary: typeof raw.commentary === 'string'
-      ? compactText(raw.commentary, 220)
+      ? compactText(raw.commentary, 400)
       : typeof raw.reason === 'string'
         ? compactText(raw.reason, 220)
         : '',
