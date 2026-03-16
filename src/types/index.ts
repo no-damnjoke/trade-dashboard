@@ -87,6 +87,8 @@ export interface TechnicalSetup {
   staleAfter: number;
   entryZone?: string;
   targets?: string[];
+  stopLoss?: string;
+  riskRewardRatio?: number;
   timeframeAlignment?: string;
   quality?: 'A' | 'B' | 'C' | 'skip';
   reasoning?: string;
@@ -147,6 +149,10 @@ export interface MarketOpportunity {
   theme?: string;
   isSynthetic?: boolean;
   conflictFlag?: string;
+  keyLevels?: {
+    support: string[];
+    resistance: string[];
+  };
 }
 
 export interface MarketState {

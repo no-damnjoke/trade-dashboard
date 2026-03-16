@@ -26,6 +26,7 @@ export interface AIFXSetup {
   entryZone: string;
   invalidation: string;
   targets: string[];
+  stopLoss: string;
   confidence: number;
   quality: 'A' | 'B' | 'C' | 'skip';
   reasoning: string;
@@ -52,6 +53,10 @@ export interface AIOpportunityResult {
   theme?: string;
   isSynthetic?: boolean;
   conflictFlag?: string;
+  keyLevels?: {
+    support: string[];
+    resistance: string[];
+  };
 }
 
 export interface AIOpportunityResponse {
@@ -124,6 +129,9 @@ export interface OpportunitySnapshot {
     baselineScore: number;
     staleAfter: number;
   }>;
+  contextBrief?: string;
+  sessionContext?: string;
+  priorDayContext?: string;
 }
 
 const ICT_ONTOLOGY = `
@@ -395,6 +403,7 @@ function isAIFXSetup(value: unknown): value is AIFXSetup {
     typeof setup.invalidation === 'string' &&
     Array.isArray(setup.targets) &&
     setup.targets.every(target => typeof target === 'string') &&
+    typeof setup.stopLoss === 'string' &&
     isConfidence(setup.confidence) &&
     ['A', 'B', 'C', 'skip'].includes(setup.quality) &&
     typeof setup.reasoning === 'string' &&
@@ -486,6 +495,16 @@ function formatInvalidation(raw: Record<string, unknown>) {
   return level ? `${type} ${level}` : type;
 }
 
+function formatStopLoss(raw: Record<string, unknown>) {
+  if (typeof raw.stopLoss === 'string') return raw.stopLoss;
+  if (typeof raw.stop_loss === 'string') return raw.stop_loss;
+  if (typeof raw.stop === 'string') return raw.stop;
+  if (typeof raw.stopLoss === 'number') return formatNumber(raw.stopLoss);
+  if (typeof raw.stop_loss === 'number') return formatNumber(raw.stop_loss);
+  if (typeof raw.stop === 'number') return formatNumber(raw.stop);
+  return 'n/a';
+}
+
 function formatTargets(raw: Record<string, unknown>) {
   if (Array.isArray(raw.targets)) {
     return raw.targets.filter((target): target is string => typeof target === 'string');
@@ -538,6 +557,7 @@ function normalizeFXSetup(value: unknown): AIFXSetup | null {
     entryZone: formatEntryZone(raw),
     invalidation: formatInvalidation(raw),
     targets: formatTargets(raw),
+    stopLoss: formatStopLoss(raw),
     confidence,
     quality,
     reasoning: typeof raw.reasoning === 'string'
@@ -573,6 +593,8 @@ export async function evaluateFXSetups(snapshot: FXSetupSnapshot) {
     'Every non-skip setup must include: a directional bias (long or short), a concrete numeric entryZone, at least one concrete numeric target, and a concrete invalidation level or stop area.',
     'Do not return "n/a", "mixed", or vague text for entry, targets, invalidation, or timeframe alignment on a tradable setup.',
     'If the timeframes are mixed or you cannot give concrete levels, mark it skip instead of forcing a trade.',
+    'Every non-skip setup must include a stopLoss field with a concrete numeric price level where the trade is wrong.',
+    'stopLoss is the exact price for the stop order. invalidation is the structural condition that proves the thesis wrong. Both are required.',
     'Only use these setup archetypes unless skip is required: liquidity_sweep_reversal, displacement_continuation, fair_value_gap_retest, order_block_reaction, range_expansion_breakout, session_liquidity_reversal.',
   ].join(' ');
 
@@ -669,6 +691,16 @@ function normalizeOpportunityResult(value: unknown, candidateIds: Set<string>): 
     theme: typeof raw.theme === 'string' ? raw.theme : undefined,
     isSynthetic: typeof raw.isSynthetic === 'boolean' ? raw.isSynthetic : (typeof raw.candidateId === 'string' && raw.candidateId.startsWith('synth-')) || undefined,
     conflictFlag: typeof raw.conflictFlag === 'string' ? raw.conflictFlag : undefined,
+    keyLevels: raw.keyLevels && typeof raw.keyLevels === 'object'
+      ? {
+          support: Array.isArray((raw.keyLevels as Record<string, unknown>).support)
+            ? ((raw.keyLevels as Record<string, unknown>).support as unknown[]).filter((l): l is string => typeof l === 'string')
+            : [],
+          resistance: Array.isArray((raw.keyLevels as Record<string, unknown>).resistance)
+            ? ((raw.keyLevels as Record<string, unknown>).resistance as unknown[]).filter((l): l is string => typeof l === 'string')
+            : [],
+        }
+      : undefined,
   };
 
   return isAIOpportunityResult(normalized, candidateIds) ? normalized : null;
@@ -677,43 +709,44 @@ function normalizeOpportunityResult(value: unknown, candidateIds: Set<string>): 
 export async function evaluateOpportunities(snapshot: OpportunitySnapshot) {
   const candidateIds = new Set(snapshot.candidates.map(candidate => candidate.id));
   const systemPrompt = [
-    'You are the Opportunity Aggregation Agent for a macro trading dashboard.',
+    'You are a senior macro strategist synthesizing the trading session for a G10 FX desk.',
     '',
-    'ROLE: Synthesize all provided market data into a cohesive trading view. You receive:',
-    '- Pre-scored candidate opportunities from macro signals, headlines, FX setups, and whale activity',
-    '- G10 currency heatmap data showing real-time strength/weakness vs USD',
+    'ROLE: Build a cohesive, level-aware market view from all provided data. You receive:',
+    '- Pre-scored candidate opportunities from headlines, FX setups, and whale activity',
+    '- G10 currency heatmap showing real-time strength/weakness vs USD',
     '- Regime context (USD bias, breadth, lead pair)',
-    '- A contextBrief with recent macro headlines from global news sources (WSJ, CNBC, Reuters, FT, etc.)',
+    '- A contextBrief with recent macro headlines from global news sources',
+    '- Session context from your prior cycles (if available) — use it to compound understanding',
+    '- Prior day context (if available) — use it to identify recurring levels and themes',
     '',
-    'IMPORTANT: The contextBrief is BACKGROUND context scraped every 6 hours — use it to understand the macro narrative, but live candidates, heatmap, and regime data are more current and take priority. Do not generate opportunities purely from contextBrief headlines.',
+    'CONTEXT PRIORITY: Live candidates, heatmap, and regime data are most current. Session context shows your prior calls and what happened since. contextBrief is background scraped every 6h. Prior day context is yesterday\'s digest.',
     '',
     'YOUR TASKS:',
     '',
-    '1. NARRATIVE: Write a 2-3 sentence "narrative" describing the current regime, dominant themes, and key risks. Be specific and actionable, not generic.',
+    '1. NARRATIVE: Write a 2-3 sentence desk note describing the current regime, dominant themes, and key risks.',
+    '   - Reference concrete price levels from the data. Not "USD is weak" but "USD is softening — NZD/USD holding 0.5620 support, AUD/USD testing 0.6500 resistance."',
+    '   - If session context is provided, note what confirmed or changed since last cycle.',
     '',
-    '2. THEMES: Identify 2-4 active themes from the data. Examples: "USD Weakness", "Risk-Off", "JPY Carry Unwind", "Event-Driven", "Crypto Impulse", "Rate Divergence". Return as a "themes" array.',
+    '2. THEMES: Identify 2-4 active themes. Examples: "USD Weakness", "Risk-Off", "JPY Carry Unwind", "Gulf Risk Premium". Return as a "themes" array.',
     '',
-    '3. OPPORTUNITIES: Rank and refine the provided candidates. You MAY also synthesize up to 3 new cross-asset ideas that the candidates alone do not capture, but only if the data strongly supports them.',
+    '3. OPPORTUNITIES: Rank and refine candidates. You MAY synthesize up to 3 new cross-asset ideas if data strongly supports them.',
     '   - For existing candidates: use the provided candidateId.',
-    '   - For synthetic ideas: use candidateId format "synth-1", "synth-2", etc. Set isSynthetic=true.',
-    '   - Synthetic ideas MUST use instruments from the provided heatmap or candidate data. Do not invent tickers.',
-    '   - Each opportunity MUST include a "theme" field matching one of your identified themes.',
-    '   - Every opportunity title must be specific and tradable. Lead with the instrument and thesis, e.g. "NZD/USD USD-Weak Continuation" or "Gold Geopolitical Hedge Bid".',
-    '   - Never use generic one-word titles like "Divergence", "Breakout", "Continuation", "Momentum", or "Reversal".',
-    '   - Use heatmap breadth to confirm or contradict regime signals.',
+    '   - For synthetic ideas: use candidateId "synth-1", "synth-2", etc. Set isSynthetic=true.',
+    '   - Synthetic ideas MUST use instruments from the provided heatmap or candidate data.',
+    '   - Each opportunity MUST include:',
+    '     - "theme" matching one of your identified themes',
+    '     - "keyLevels" object with "support" and "resistance" arrays of concrete price strings from the data',
+    '     - "invalidation" as a price-specific condition: "NZD/USD below 0.5580" not "loses momentum"',
+    '   - Titles must be specific: "NZD/USD USD-Weak Continuation" not "Momentum".',
+    '   - Commentary reads like a desk note: concise, directional, level-aware. Max 2 sentences, under 35 words.',
     '',
-    '4. CONFLICTS: When sources disagree on an instrument or theme (e.g., bullish FX setup vs bearish headline), surface it as a conflict entry.',
-    '   - Each conflict needs: instrument, description, sources array, and recommendation ("watch", "fade", or "wait").',
-    '   - For instrument, use a readable label like "USD Regime", "DXY", or the pair name. Do not use camelCase or internal field names.',
-    '   - Also set conflictFlag on the relevant opportunity object with a short description.',
-    '   - Be precise about conflicts: JPY strength during risk-on is NOT a conflict — JPY can strengthen on carry unwind while risk appetite is broad. Only flag genuine contradictions.',
+    '4. CONFLICTS: When sources disagree on instrument or theme, surface as conflict.',
+    '   - Each conflict: instrument, description, sources, recommendation ("watch"/"fade"/"wait").',
+    '   - JPY strength during risk-on is NOT a conflict — only flag genuine contradictions.',
     '',
-    'Keep commentary concise: at most 2 short sentences, ideally under 35 words total.',
-    'No article-style commentary, no macro recap, no repeated background context.',
+    'SESSION LEARNING: If session context shows your prior levels held or broke, acknowledge this. Build on what worked. Drop what faded. Your narrative should compound, not restart.',
     '',
     'Return strict JSON: { "narrative": "...", "themes": ["..."], "opportunities": [...], "conflicts": [...] }',
-    '',
-    'Reward confluence, regime alignment, fresh catalysts, clear invalidation, heatmap breadth confirmation, and high-confidence setups.',
   ].join('\n');
 
   const result = await invokeAIAgent<AIOpportunityResponse>({

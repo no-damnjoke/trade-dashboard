@@ -16,6 +16,8 @@ export interface TechnicalSetup {
   staleAfter: number;
   entryZone?: string;
   targets?: string[];
+  stopLoss?: string;
+  riskRewardRatio?: number;
   timeframeAlignment?: string;
   quality?: 'A' | 'B' | 'C' | 'skip';
   reasoning?: string;
@@ -274,6 +276,28 @@ async function buildFXSetupSnapshot(context: FXSetupContext): Promise<FXSetupSna
   };
 }
 
+function parsePrice(value: string): number | null {
+  const rangeMatch = value.match(/^([\d.]+)\s*-\s*([\d.]+)$/);
+  if (rangeMatch) {
+    const low = parseFloat(rangeMatch[1]);
+    const high = parseFloat(rangeMatch[2]);
+    if (Number.isFinite(low) && Number.isFinite(high)) return (low + high) / 2;
+  }
+  const single = parseFloat(value);
+  return Number.isFinite(single) ? single : null;
+}
+
+function computeRiskReward(entryZone: string, stopLoss: string, targets: string[]): number | null {
+  const entry = parsePrice(entryZone);
+  const sl = parsePrice(stopLoss);
+  const tp = targets.length > 0 ? parsePrice(targets[0]) : null;
+  if (entry == null || sl == null || tp == null) return null;
+  const risk = Math.abs(entry - sl);
+  const reward = Math.abs(tp - entry);
+  if (risk === 0) return null;
+  return Math.round((reward / risk) * 100) / 100;
+}
+
 function toTechnicalSetup(setup: AIFXSetup): TechnicalSetup {
   const instrument = getInstrument(setup.pair);
   const displayName = instrument?.displayName || setup.pair;
@@ -288,6 +312,8 @@ function toTechnicalSetup(setup: AIFXSetup): TechnicalSetup {
     staleAfter: Date.now() + 20 * 60_000,
     entryZone: setup.entryZone,
     targets: setup.targets,
+    stopLoss: setup.stopLoss,
+    riskRewardRatio: computeRiskReward(setup.entryZone, setup.stopLoss, setup.targets),
     timeframeAlignment: setup.timeframeAlignment,
     quality: setup.quality,
     reasoning: setup.reasoning,
@@ -340,10 +366,12 @@ export async function refreshFXSetups(): Promise<void> {
         setup.bias !== 'neutral' &&
         setup.entryZone !== 'n/a' &&
         setup.invalidation !== 'n/a' &&
+        setup.stopLoss !== 'n/a' &&
         setup.targets.length > 0 &&
         setup.timeframeAlignment.toLowerCase() !== 'mixed'
       )
       .map(toTechnicalSetup)
+      .filter(setup => setup.riskRewardRatio == null || setup.riskRewardRatio >= 1.0)
       .slice(0, 8);
 
     if (aiSetups.length > 0) {
