@@ -141,89 +141,12 @@ function buildContext(): FXSetupContext {
   };
 }
 
-function getDeterministicFXSetupsFromContext(context: FXSetupContext): TechnicalSetup[] {
-  const setups: TechnicalSetup[] = [];
-
-  for (const signal of context.signals.slice(0, 6)) {
-    const factors = [
-      `z-score ${signal.zScore.toFixed(1)}`,
-      `acceleration ${signal.acceleration > 0 ? '+' : ''}${signal.acceleration.toFixed(3)}`,
-      `move ${signal.moveBps.toFixed(1)}${signal.moveUnit}`,
-    ];
-
-    const alignedHeadline = context.headlines.find(headline => headline.affectedAssets.includes(signal.pair));
-    if (alignedHeadline) {
-      setups.push({
-        id: `event-${signal.pair}-${signal.timestamp}`,
-        type: 'event_continuation',
-        pair: signal.displayName,
-        direction: signal.direction === 'up' ? 'long' : 'short',
-        confidence: Math.min(95, Math.round(55 + signal.zScore * 9)),
-        invalidation: `Fade if ${signal.displayName} retraces half of the impulse move`,
-        supportingFactors: [...factors, `headline: ${alignedHeadline.whyItMatters}`],
-        staleAfter: signal.timestamp + 20 * 60_000,
-        classificationMethod: 'deterministic',
-      });
-    }
-
-    if (Math.abs(signal.acceleration) > 0.04 && signal.zScore >= 2.5) {
-      setups.push({
-        id: `break-${signal.pair}-${signal.timestamp}`,
-        type: 'range_break_accel',
-        pair: signal.displayName,
-        direction: signal.direction === 'up' ? 'long' : 'short',
-        confidence: Math.min(92, Math.round(50 + signal.zScore * 10)),
-        invalidation: 'Invalidate on failed follow-through within 2 candles',
-        supportingFactors: [...factors, 'impulse expansion still building'],
-        staleAfter: signal.timestamp + 15 * 60_000,
-        classificationMethod: 'deterministic',
-      });
-    }
-
-    if (Math.abs(signal.acceleration) < 0.01 && signal.zScore >= 2.0) {
-      setups.push({
-        id: `reversal-${signal.pair}-${signal.timestamp}`,
-        type: 'failed_break_reversal',
-        pair: signal.displayName,
-        direction: signal.direction === 'up' ? 'short' : 'long',
-        confidence: Math.min(80, Math.round(45 + signal.zScore * 8)),
-        invalidation: 'Cancel if fresh momentum resumes in original direction',
-        supportingFactors: [...factors, 'momentum flattening after extension'],
-        staleAfter: signal.timestamp + 10 * 60_000,
-        classificationMethod: 'deterministic',
-      });
-    }
-  }
-
-  if (context.regime.usdBias !== 'mixed') {
-    setups.push({
-      id: `usd-regime-${context.regime.updatedAt}`,
-      type: 'usd_regime_impulse',
-      pair: 'USD basket',
-      direction: context.regime.usdBias === 'stronger' ? 'long' : 'short',
-      confidence: Math.min(90, 50 + context.regime.usdBreadth * 8),
-      invalidation: 'Invalidate if USD breadth drops back to neutral',
-      supportingFactors: [
-        `usd breadth ${context.regime.usdBreadth}`,
-        `regime ${context.regime.usdBias}`,
-        context.regime.topShock ? `lead pair ${context.regime.topShock.displayName}` : 'no lead pair',
-      ],
-      staleAfter: Date.now() + 25 * 60_000,
-      classificationMethod: 'deterministic',
-    });
-  }
-
-  return setups
-    .sort((left, right) => right.confidence - left.confidence)
-    .slice(0, 8);
-}
-
-function shouldUseFXSetupAI(context: FXSetupContext, deterministic: TechnicalSetup[]) {
+function shouldUseFXSetupAI(context: FXSetupContext) {
   if (context.pairs.every(pair => pair.currentPrice == null)) return false;
   if (isMockMarketDataEnabled()) return context.pairs.some(pair => pair.currentPrice != null);
   if (context.signals.length > 0) return true;
   if (context.headlines.some(headline => headline.classificationMethod === 'ai' && headline.actionability === 'actionable')) return true;
-  if (deterministic.length >= 2) return true;
+  if (context.pairs.some(pair => pair.currentPrice != null)) return true;
   return false;
 }
 
@@ -375,11 +298,10 @@ function toTechnicalSetup(setup: AIFXSetup): TechnicalSetup {
 
 export async function refreshFXSetups(): Promise<void> {
   cachedContext = buildContext();
-  const deterministic = getDeterministicFXSetupsFromContext(cachedContext);
   const aiSignature = buildAISignature(cachedContext);
 
-  if (!shouldUseFXSetupAI(cachedContext, deterministic)) {
-    cachedSetups = deterministic;
+  if (!shouldUseFXSetupAI(cachedContext)) {
+    cachedSetups = [];
     lastRefresh = Date.now();
     return;
   }
@@ -389,10 +311,6 @@ export async function refreshFXSetups(): Promise<void> {
   }
 
   if (!isMockMarketDataEnabled() && lastAITriggeredAt > 0 && Date.now() - lastAITriggeredAt < FX_SETUP_AI_MIN_INTERVAL_MS) {
-    if (cachedSetups.length === 0) {
-      cachedSetups = deterministic;
-      lastRefresh = Date.now();
-    }
     return;
   }
 
@@ -408,12 +326,7 @@ export async function refreshFXSetups(): Promise<void> {
     if (!result.ok || !result.data) {
       lastAIError = result.error || 'fx setup ai unavailable';
       const activeAISetups = getActiveCachedAISetups();
-      cachedSetups = activeAISetups.length > 0
-        ? activeAISetups
-        : deterministic.map(setup => ({
-            ...setup,
-            fallbackReason: result.error || 'fx setup ai unavailable',
-          }));
+      cachedSetups = activeAISetups.length > 0 ? activeAISetups : [];
       lastAISignature = aiSignature;
       lastRefresh = Date.now();
       return;
@@ -438,12 +351,7 @@ export async function refreshFXSetups(): Promise<void> {
     } else {
       lastAIError = 'fx setup ai returned no qualified setups';
       const activeAISetups = getActiveCachedAISetups();
-      cachedSetups = activeAISetups.length > 0
-        ? activeAISetups
-        : deterministic.map(setup => ({
-            ...setup,
-            fallbackReason: 'fx setup ai returned no qualified setups',
-          }));
+      cachedSetups = activeAISetups.length > 0 ? activeAISetups : [];
     }
     lastAISignature = aiSignature;
     lastRefresh = Date.now();
@@ -452,12 +360,7 @@ export async function refreshFXSetups(): Promise<void> {
     lastAINormalizedResult = [];
     lastAIError = (error as Error).message;
     const activeAISetups = getActiveCachedAISetups();
-    cachedSetups = activeAISetups.length > 0
-      ? activeAISetups
-      : deterministic.map(setup => ({
-          ...setup,
-          fallbackReason: (error as Error).message,
-        }));
+    cachedSetups = activeAISetups.length > 0 ? activeAISetups : [];
     lastRefresh = Date.now();
   }
 }
@@ -470,15 +373,7 @@ export function getFXSetupContext(): FXSetupContext {
 }
 
 export function getTechnicalSetups(): TechnicalSetup[] {
-  if (Date.now() - lastRefresh > FX_SETUP_REFRESH_TTL_MS && cachedSetups.length === 0) {
-    cachedContext = buildContext();
-    cachedSetups = getDeterministicFXSetupsFromContext(cachedContext);
-  }
   return cachedSetups.slice(0, 8);
-}
-
-export function getDeterministicFXSetups(): TechnicalSetup[] {
-  return getDeterministicFXSetupsFromContext(buildContext());
 }
 
 export function getFXSetupUniverse() {

@@ -2,7 +2,6 @@ export type { TechnicalSetup, FXSetupContext, FXSetupPairSnapshot } from './fxSe
 export {
   getTechnicalSetups,
   getFXSetupContext,
-  getDeterministicFXSetups,
   refreshFXSetups,
   getFXSetupUniverse,
 } from './fxSetupEngine.js';
