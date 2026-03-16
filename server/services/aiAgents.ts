@@ -602,7 +602,7 @@ export async function evaluateFXSetups(snapshot: FXSetupSnapshot) {
     agent: 'fx-setup',
     systemPrompt,
     userPayload: snapshot,
-    timeoutMs: 45_000,
+    timeoutMs: 90_000,
     maxTokens: 2000,
   });
 
