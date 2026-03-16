@@ -378,7 +378,9 @@ export async function invokeAIAgent<T>(options: AIInvocationOptions): Promise<AI
       }
 
       const data = await response.json();
-      const content = data.choices?.[0]?.message?.content;
+      const message = data.choices?.[0]?.message;
+      // Some models (e.g. MiniMax) put the response in reasoning instead of content
+      const content = message?.content || message?.reasoning;
       if (!content) {
         lastProviderError = `${options.agent} empty response`;
         usageStats.totalFailures += 1;
