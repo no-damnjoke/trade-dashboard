@@ -358,6 +358,15 @@ export async function refreshFXSetups(): Promise<void> {
       return;
     }
 
+    for (const setup of result.data) {
+      const checks = {
+        skip: setup.skip, quality: setup.quality, confidence: setup.confidence,
+        bias: setup.bias, entryZone: setup.entryZone, invalidation: setup.invalidation,
+        stopLoss: setup.stopLoss, targetsLen: setup.targets.length,
+      };
+      console.log(`[FX Setup] ${setup.pair}: ${JSON.stringify(checks)}`);
+    }
+
     const aiSetups = result.data
       .filter(setup =>
         !setup.skip &&
@@ -372,6 +381,8 @@ export async function refreshFXSetups(): Promise<void> {
       .map(toTechnicalSetup)
       .filter(setup => setup.riskRewardRatio == null || setup.riskRewardRatio >= 1.0)
       .slice(0, 8);
+
+    console.log(`[FX Setup] ${result.data.length} normalized → ${aiSetups.length} qualified`);
 
     if (aiSetups.length > 0) {
       cachedSetups = aiSetups;
