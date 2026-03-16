@@ -9,6 +9,50 @@ interface BraveSearchResult {
   age?: string;
 }
 
+export async function searchMacroContext(themes: string[], count = 3): Promise<BraveSearchResult[]> {
+  if (!BRAVE_API_KEY || themes.length === 0) return [];
+
+  // Build a focused query from the top 2 themes
+  const query = themes.slice(0, 2).join(' ') + ' forex macro today';
+  const startTime = Date.now();
+  try {
+    const params = new URLSearchParams({
+      q: query,
+      count: String(count),
+      freshness: 'pd',
+      text_decorations: 'false',
+    });
+    const controller = new AbortController();
+    const timeout = setTimeout(() => controller.abort(), 5_000);
+
+    const response = await fetch(`https://api.search.brave.com/res/v1/web/search?${params}`, {
+      headers: {
+        'Accept': 'application/json',
+        'Accept-Encoding': 'gzip',
+        'X-Subscription-Token': BRAVE_API_KEY,
+      },
+      signal: controller.signal,
+    });
+
+    clearTimeout(timeout);
+    trackRequest({ service: 'brave-search', endpoint: 'web/search', method: 'GET', status: response.status, latencyMs: Date.now() - startTime, detail: `macro: ${query.slice(0, 50)}` });
+    if (!response.ok) return [];
+
+    const data = await response.json();
+    const results = data.web?.results || [];
+
+    return results.slice(0, count).map((r: any) => ({
+      title: r.title || '',
+      url: r.url || '',
+      description: (r.description || '').slice(0, 200),
+      age: r.age || undefined,
+    }));
+  } catch (err) {
+    trackRequest({ service: 'brave-search', endpoint: 'web/search', method: 'GET', status: 'error', latencyMs: Date.now() - startTime, detail: `macro: ${query.slice(0, 50)}` });
+    return [];
+  }
+}
+
 export async function searchHeadline(query: string, count = 5): Promise<BraveSearchResult[]> {
   if (!BRAVE_API_KEY) return [];
 

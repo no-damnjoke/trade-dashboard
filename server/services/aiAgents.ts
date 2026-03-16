@@ -132,6 +132,7 @@ export interface OpportunitySnapshot {
   contextBrief?: string;
   sessionContext?: string;
   priorDayContext?: string;
+  webSearch?: Array<{ title: string; description: string; age?: string }>;
 }
 
 const ICT_ONTOLOGY = `
@@ -722,7 +723,7 @@ export async function evaluateOpportunities(snapshot: OpportunitySnapshot) {
     '- Session context from your prior cycles (if available)',
     '- Prior day context (if available)',
     '',
-    'CONTEXT PRIORITY: Live candidates, heatmap, and regime are most current. Session context shows prior calls. contextBrief is background (every 6h). Prior day is yesterday\'s digest.',
+    'CONTEXT PRIORITY: Live candidates, heatmap, and regime are most current. Session context shows prior calls. contextBrief is background (every 6h). Prior day is yesterday\'s digest. webSearch (if present) contains live web results for the current macro themes — use them to validate or enrich your narrative and identify drivers the other data sources may miss.',
     '',
     'YOUR TASKS:',
     '',

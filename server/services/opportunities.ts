@@ -1,4 +1,5 @@
 import { buildOpportunityWhaleCandidates, evaluateOpportunities, type OpportunitySnapshot } from './aiAgents.js';
+import { searchMacroContext } from './braveSearch.js';
 import { getCachedHeadlinesBundle } from './headlines.js';
 import { getCachedHeatmapData, getHeatmapStrengthSummary } from './heatmap.js';
 import { getInstrument } from './instruments.js';
@@ -92,15 +93,20 @@ function getMeaningfulWhaleCandidates() {
     .slice(0, 5);
 }
 
-function buildOpportunitySnapshot(
+async function buildOpportunitySnapshot(
   headlinesBundle: ReturnType<typeof getCachedHeadlinesBundle>,
   regime: ReturnType<typeof getRegimeSnapshot>,
-): OpportunitySnapshot {
+): Promise<OpportunitySnapshot> {
   const headlines = getMeaningfulHeadlineCandidates();
   const fxSetups = getMeaningfulFXSetupCandidates();
   const whales = getMeaningfulWhaleCandidates();
   const heatmapData = getCachedHeatmapData();
   const heatmapSummary = getHeatmapStrengthSummary();
+
+  // Search live web using prior cycle's themes (if any)
+  const webResults = cachedThemes.length > 0
+    ? await searchMacroContext(cachedThemes, 3)
+    : [];
   const candidates = [
     ...headlines.map(headline => ({
       id: `headline-${headline.id}`,
@@ -172,6 +178,9 @@ function buildOpportunitySnapshot(
     contextBrief: getContextBriefForAI() ?? undefined,
     sessionContext: buildSessionContext(),
     priorDayContext: loadYesterdayDigest(),
+    webSearch: webResults.length > 0
+      ? webResults.map(r => ({ title: r.title, description: r.description, age: r.age }))
+      : undefined,
   } as OpportunitySnapshot;
 }
 
@@ -279,7 +288,7 @@ export async function refreshOpportunityBoard(): Promise<void> {
   updateLevelTests();
   const headlinesBundle = getCachedHeadlinesBundle();
   const regime = getRegimeSnapshot();
-  const snapshot = buildOpportunitySnapshot(headlinesBundle, regime);
+  const snapshot = await buildOpportunitySnapshot(headlinesBundle, regime);
   const aiSignature = buildAISignature(snapshot);
 
   if (!shouldUseOpportunityAI(snapshot)) {
