@@ -338,12 +338,21 @@ export async function refreshOpportunityBoard(): Promise<void> {
 
   const candidateMap = new Map(snapshot.candidates.map(candidate => [candidate.id, candidate]));
   const aiOpportunities: MarketOpportunity[] = (aiResults || [])
-    .filter(item => item.confidence >= minConfidence)
+    .filter(item => {
+      if (item.confidence < minConfidence) {
+        console.log(`[Opportunities] Dropped ${item.candidateId}: confidence ${item.confidence} < ${minConfidence}`);
+        return false;
+      }
+      return true;
+    })
     .flatMap(item => {
       const isSynthetic = typeof item.candidateId === 'string' && item.candidateId.startsWith('synth-');
       const candidate = candidateMap.get(item.candidateId);
 
-      if (!candidate && !isSynthetic) return [];
+      if (!candidate && !isSynthetic) {
+        console.log(`[Opportunities] Dropped ${item.candidateId}: no matching candidate (available: ${[...candidateMap.keys()].slice(0, 5).join(', ')}...)`);
+        return [];
+      }
       if (isSynthetic && !getInstrument(item.instrument)) return [];
       if (isSynthetic && (item.confidence < 70 || item.urgency === 'low')) return [];
 
