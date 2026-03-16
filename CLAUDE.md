@@ -26,7 +26,7 @@ No test runner is configured. Validate with `npm run build` and manual verificat
 - **Entry:** `src/main.tsx` → `src/app.tsx` → `AppProvider` context wraps `Layout`
 - **State:** `src/context/AppContext.tsx` — global UI state (focused panel, alerts, overlays) via Preact context
 - **Data fetching:** All poll-based, no WebSockets. `src/hooks/usePolling.ts` polls backend endpoints at fixed intervals. All API calls go through `src/services/api.ts` (`fetchJSON<T>()` hitting `/api/*`).
-- **Layout:** `src/components/Layout.tsx` — two-column grid with 7 panels: Headlines, Velocity, Setups, Predictions, Watchlist, Calendar, Fundamentals. Plus: Header, Heatmap, StatusBar, CommandPalette, HelpOverlay, AlertsDrawer.
+- **Layout:** `src/components/Layout.tsx` — customizable grid with 6 panels: Headlines, Velocity, Setups, Predictions, Watchlist, Calendar. Plus: Header, Heatmap, StatusBar, CommandPalette, HelpOverlay, AlertsDrawer. Layout is drag-and-resize via `src/context/DashboardLayoutContext.tsx` (12×12 grid, persisted to localStorage).
 - **Panels:** `src/panels/` — self-contained feature views. Each panel polls its own API endpoint.
 - **Styling:** Plain CSS co-located with components (no CSS modules, no Tailwind). Design tokens in `src/styles/tokens.css`.
 - **Keyboard navigation:** `src/hooks/useKeyboard.ts` handles hotkeys and panel focus
@@ -39,13 +39,14 @@ No test runner is configured. Validate with `npm run build` and manual verificat
 - **Market data:** `server/services/instruments.ts` defines tracked universe (`MARKET_INSTRUMENTS`). Prices via TradingView (`tradingview.ts`, `tradingviewCandles.ts`).
 - **Velocity monitor:** `server/services/velocityMonitor.ts` — polls every 30s, computes velocity/acceleration/z-score
 - **Headlines:** `server/services/headlines.ts` — Telegram (FirstSquawk) + Twitter scraping
-- **AI layer:** `server/services/aiProvider.ts` — OpenAI-compatible client with three provider modes. Three AI agents: `headline-impact`, `fx-setup`, `opportunity-ranker` (defined in `aiAgents.ts`). Falls back to deterministic output when AI is disabled/fails.
+- **AI layer:** `server/services/aiProvider.ts` — OpenAI-compatible client (all GPT 5.2 family, no Claude). Three AI agents: `headline-impact` (gpt-5.2-codex-mini), `fx-setup` (gpt-5.2-codex-mini), `opportunity-ranker` (gpt-5.2). No deterministic fallbacks for setups/opportunities — shows empty state when AI is unavailable. Prompts and validation in `aiAgents.ts`.
+- **Opportunity feedback loop:** `server/services/opportunityMemory.ts` — session memory ring buffer (6 cycles), level tracking, theme persistence. `server/services/dailyDigest.ts` — cross-day persistence to `data/digests/`. Opportunity agent runs every 10 min with compounding context.
 - **Prediction markets:** `server/services/polymarket.ts` — whale tracking and prediction data
 - **Mock data:** `server/services/mockMarketData.ts` + `server/routes/devMockMarket.ts` for dev without live feeds
 
 ### Shared Types
 
-`shared/` directory contains types used by both frontend and backend (e.g., `shared/marketFundamentals.ts`). Frontend re-exports these from `src/types/index.ts`. Key domain types: `Headline`, `HeatmapEntry`, `PredictionMarket`, `Alert`, `VelocitySignal`, `TechnicalSetup`, `MarketOpportunity`, `MarketState`, `CountryResearchPacket`, `MarketFundamentalsPayload`.
+`shared/` directory contains types used by both frontend and backend (e.g., `shared/marketFundamentals.ts`). Frontend re-exports these from `src/types/index.ts`. Key domain types: `Headline`, `HeatmapEntry`, `PredictionMarket`, `Alert`, `VelocitySignal`, `TechnicalSetup`, `MarketOpportunity`, `MarketState`.
 
 ### Frontend ↔ Backend
 
