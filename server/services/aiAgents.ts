@@ -439,13 +439,18 @@ function formatRangeObject(value: unknown) {
   return `${formatNumber(low)} - ${formatNumber(high)}`;
 }
 
-function normalizeFXQuality(rawQuality: unknown): AIFXSetup['quality'] {
-  if (typeof rawQuality !== 'string') return 'skip';
-  const quality = rawQuality.toLowerCase().trim();
-  if (quality === 'a' || quality === 'high') return 'A';
-  if (quality === 'b' || quality === 'medium') return 'B';
-  if (quality === 'c' || quality === 'low') return 'C';
-  if (quality === 'skip') return 'skip';
+function normalizeFXQuality(rawQuality: unknown, raw?: Record<string, unknown>): AIFXSetup['quality'] {
+  if (typeof rawQuality === 'string') {
+    const quality = rawQuality.toLowerCase().trim();
+    if (quality === 'a' || quality === 'high') return 'A';
+    if (quality === 'b' || quality === 'medium') return 'B';
+    if (quality === 'c' || quality === 'low') return 'C';
+    if (quality === 'skip') return 'skip';
+  }
+  // If quality is missing but setup has real levels + direction, infer B quality
+  if (raw && (raw.bias === 'long' || raw.bias === 'short') && (raw.entryZone || raw.entry) && (raw.stopLoss || raw.stop_loss || raw.stop)) {
+    return 'B';
+  }
   return 'skip';
 }
 
@@ -473,8 +478,10 @@ function formatTimeframeAlignment(value: unknown) {
 function formatEntryZone(raw: Record<string, unknown>) {
   if (typeof raw.entryZone === 'string') return raw.entryZone;
   if (typeof raw.entryZone === 'number') return formatNumber(raw.entryZone);
+  if (Array.isArray(raw.entryZone)) return formatRange(raw.entryZone) ?? 'n/a';
   if (typeof raw.entry === 'string') return raw.entry;
   if (typeof raw.entry === 'number') return formatNumber(raw.entry);
+  if (Array.isArray(raw.entry)) return formatRange(raw.entry) ?? 'n/a';
   const entrySource = raw.entryZone && typeof raw.entryZone === 'object'
     ? raw.entryZone
     : raw.entry;
@@ -540,7 +547,7 @@ function formatTargets(raw: Record<string, unknown>) {
 function normalizeFXSetup(value: unknown): AIFXSetup | null {
   if (!value || typeof value !== 'object') return null;
   const raw = value as Record<string, unknown>;
-  const quality = normalizeFXQuality(raw.quality);
+  const quality = normalizeFXQuality(raw.quality, raw);
   const confidence = deriveFXConfidence(raw, quality);
   const rawBias = typeof raw.bias === 'string'
     ? raw.bias.toLowerCase()
