@@ -448,7 +448,8 @@ function normalizeFXQuality(rawQuality: unknown, raw?: Record<string, unknown>):
     if (quality === 'skip') return 'skip';
   }
   // If quality is missing but setup has real levels + direction, infer B quality
-  if (raw && (raw.bias === 'long' || raw.bias === 'short') && (raw.entryZone || raw.entry) && (raw.stopLoss || raw.stop_loss || raw.stop)) {
+  const bias = raw?.bias ?? raw?.directionalBias ?? raw?.direction;
+  if (raw && (bias === 'long' || bias === 'short') && (raw.entryZone || raw.entry) && (raw.stopLoss || raw.stop_loss || raw.stop)) {
     return 'B';
   }
   return 'skip';
@@ -551,9 +552,11 @@ function normalizeFXSetup(value: unknown): AIFXSetup | null {
   const confidence = deriveFXConfidence(raw, quality);
   const rawBias = typeof raw.bias === 'string'
     ? raw.bias.toLowerCase()
-    : typeof raw.direction === 'string'
-      ? raw.direction.toLowerCase()
-      : raw.bias;
+    : typeof raw.directionalBias === 'string'
+      ? raw.directionalBias.toLowerCase()
+      : typeof raw.direction === 'string'
+        ? raw.direction.toLowerCase()
+        : raw.bias;
   const rawPair = raw.pair ?? raw.id;
   const pair = typeof rawPair === 'string' ? rawPair.toUpperCase() : rawPair;
   const skip = typeof raw.skip === 'boolean' ? raw.skip : quality === 'skip';
