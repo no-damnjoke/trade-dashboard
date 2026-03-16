@@ -47,7 +47,7 @@ Frontend (Preact + Vite)         Backend (Express + TypeScript)
 | Agent | Default Model | Provider | Purpose |
 |-------|--------------|----------|---------|
 | `headline-impact` | claude-haiku-4-5 | CLI proxy | Scores headline market impact, identifies affected instruments |
-| `fx-setup` | minimax/minimax-m2.5 | OpenRouter | Generates FX trade setups with entry, stop loss, targets, and R:R (ICT/SMC) |
+| `fx-setup` | qwen/qwen-plus-2025-07-28 | OpenRouter | Generates G10 FX trade setups with entry, stop loss, targets, and R:R (ICT/SMC). 1M context handles 155K token candle payloads |
 | `opportunity-ranker` | gpt-5.2 | CLI proxy | Senior macro strategist — institutional desk notes with feedback loop |
 
 Each agent can route to a different API endpoint via per-agent env vars (`AI_*_BASE_URL`, `AI_*_API_KEY`). FX setups and opportunities are AI-only — no deterministic fallbacks. When AI is unavailable, the panels show a clean empty state.
@@ -57,7 +57,7 @@ Each agent can route to a different API endpoint via per-agent env vars (`AI_*_B
 Agents route to different providers to balance cost, speed, and rate limits:
 
 - **CLI proxy** (port 8318): Routes GPT and Claude models via CLIProxyAPI with OAuth
-- **OpenRouter**: Routes MiniMax and other third-party models via API key
+- **OpenRouter**: Routes Qwen and other third-party models via API key
 - **Per-agent overrides**: `AI_FX_SETUP_BASE_URL` + `AI_FX_SETUP_API_KEY` etc.
 
 ### Model Rotation (Rate Limit Resilience)
@@ -67,7 +67,7 @@ The opportunity-ranker automatically rotates between `gpt-5.2` and `claude-sonne
 1. Primary model (gpt-5.2) gets rate-limited
 2. Swaps to fallback (claude-sonnet-4-6), retries immediately
 3. Swap persists — next cycles use whichever model succeeded last
-4. After 5 min cooldown, auto-reverts to primary to check if quota recovered
+4. After 5 hour cooldown, auto-reverts to primary to check if quota recovered
 
 Both models route through the same CLI proxy. The feedback loop is model-agnostic — session memory carries across model switches.
 
@@ -137,7 +137,7 @@ Create a `.env` file in the project root. All variables are optional unless note
 | `AI_BRIDGE_BASE_URL` | Default base URL for AI agents | `http://127.0.0.1:8765/v1` |
 | `AI_BRIDGE_API_KEY` | Default API key for AI agents | (none) |
 | `AI_HEADLINE_MODEL` | Model for headline-impact agent | `claude-haiku-4-5-20251001` |
-| `AI_FX_SETUP_MODEL` | Model for fx-setup agent | `minimax/minimax-m2.5` |
+| `AI_FX_SETUP_MODEL` | Model for fx-setup agent | `qwen/qwen-plus-2025-07-28` |
 | `AI_FX_SETUP_BASE_URL` | Base URL override for fx-setup | (uses default) |
 | `AI_FX_SETUP_API_KEY` | API key override for fx-setup | (uses default) |
 | `AI_OPPORTUNITY_MODEL` | Model for opportunity-ranker agent | `gpt-5.2` |
@@ -203,15 +203,35 @@ Create a `.env` file in the project root. All variables are optional unless note
 | `GET /api/market-state` | Current market state summary |
 | `GET /api/context-brief` | Current RSS context brief used by AI agents |
 | `GET /api/api-tracker` | Outbound API call log and hourly stats (last 48h) |
+| `GET /api/activity-log` | Recent activity log entries (in-memory, filterable by `?type=ai:result`) |
+| `GET /api/activity-log/day?date=YYYY-MM-DD` | Full day activity log from disk (JSONL) |
+| `GET /api/activity-log/dates` | List available log dates |
+| `GET /logs` | Mobile-friendly activity log viewer (standalone HTML page) |
 | `GET /api/dev/mock-market` | Mock market data (dev only, disabled in production) |
 
 ## Rate Limit Safety
 
 The system includes several mechanisms to prevent rate limit cascading:
 
-- **Model rotation:** The opportunity-ranker auto-rotates between gpt-5.2 and claude-sonnet-4-6 on 429/529 responses, with 5-minute cooldown before retrying the primary model.
+- **Model rotation:** The opportunity-ranker auto-rotates between gpt-5.2 and claude-sonnet-4-6 on 429/529 responses, with 5-hour cooldown before retrying the primary model.
 - **Two-tier gating:** Reactive (3 min) for critical events, steady (10 min) for regular cycles. Prevents over-polling in active markets.
 - **429 fail-fast:** Non-opportunity agents return immediately on rate limit without retrying.
 - **Per-instrument cooldowns:** Velocity alerts enforce cooldown periods (4-8 minutes) to prevent alert storms.
 - **API tracker:** All outbound requests are logged with timestamps, latency, and status codes. Hourly stats retained for 48 hours via `/api/api-tracker`.
 - **Rate limit header tracking:** AI responses capture `x-ratelimit-limit`, `x-ratelimit-remaining`, and `x-ratelimit-reset` headers per agent.
+
+## USD Regime Detection
+
+The regime snapshot (`usdBias`, `usdBreadth`) uses a two-layer approach:
+
+- **Heatmap (primary):** Daily price changes across 9 G10 currencies vs USD. 6+ currencies strengthening = `weaker`, 6+ weakening = `stronger`, otherwise `mixed`. Always available.
+- **Velocity shocks (override):** When active FX velocity signals exist (15-min TTL, z-score based), they override the heatmap signal since they indicate a real-time impulse.
+- **Breadth:** 0-9 scale from heatmap (number of currencies moving in the dominant direction).
+
+## Activity Log
+
+All AI agent calls, headline classifications, opportunity cycles, and velocity signals are logged to `data/logs/YYYY-MM-DD.jsonl` files with 14-day retention.
+
+- **Mobile viewer:** `GET /logs` serves a standalone dark-themed page for reviewing logs on mobile
+- **API:** `GET /api/activity-log` for recent entries, `GET /api/activity-log/day?date=YYYY-MM-DD` for full day
+- **What's logged:** AI input snapshots, AI output JSON, headline classifications, opportunity cycle results, velocity signals
