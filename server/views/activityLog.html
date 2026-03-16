@@ -1,0 +1,563 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<title>Activity Log — Market Monitor</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500;600&family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+
+:root {
+  --bg: #07070b;
+  --bg-card: #0e0e16;
+  --bg-card-hover: #131320;
+  --bg-badge: #1a1a28;
+  --border: #1a1a26;
+  --text: #d8d8e4;
+  --text-2: #7c7c96;
+  --text-3: #4a4a60;
+  --green: #22c55e;
+  --red: #ef4444;
+  --amber: #f59e0b;
+  --blue: #3b82f6;
+  --purple: #a78bfa;
+  --cyan: #22d3ee;
+  --mono: 'JetBrains Mono', monospace;
+  --sans: 'Inter', system-ui, sans-serif;
+}
+
+html { font-size: 14px; -webkit-text-size-adjust: 100%; }
+body {
+  font-family: var(--sans);
+  background: var(--bg);
+  color: var(--text);
+  min-height: 100dvh;
+  -webkit-font-smoothing: antialiased;
+  padding: env(safe-area-inset-top) env(safe-area-inset-right) env(safe-area-inset-bottom) env(safe-area-inset-left);
+}
+
+/* Header */
+.header {
+  position: sticky; top: 0; z-index: 20;
+  background: var(--bg);
+  border-bottom: 1px solid var(--border);
+  padding: 12px 16px 10px;
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+}
+.header-row {
+  display: flex; align-items: center; justify-content: space-between;
+}
+.header h1 {
+  font-family: var(--mono);
+  font-size: 0.85rem;
+  font-weight: 600;
+  letter-spacing: 0.04em;
+  color: var(--text);
+}
+.header h1 span { color: var(--text-3); font-weight: 400; }
+.header-stats {
+  font-family: var(--mono);
+  font-size: 0.7rem;
+  color: var(--text-3);
+}
+.header-stats b { color: var(--text-2); font-weight: 500; }
+
+/* Filter bar */
+.filters {
+  display: flex; gap: 6px; overflow-x: auto;
+  padding: 10px 16px 8px;
+  -webkit-overflow-scrolling: touch;
+  scrollbar-width: none;
+}
+.filters::-webkit-scrollbar { display: none; }
+.filter-btn {
+  flex-shrink: 0;
+  font-family: var(--mono);
+  font-size: 0.68rem;
+  font-weight: 500;
+  padding: 5px 10px;
+  border-radius: 4px;
+  border: 1px solid var(--border);
+  background: transparent;
+  color: var(--text-2);
+  cursor: pointer;
+  transition: all 120ms ease;
+  white-space: nowrap;
+}
+.filter-btn:active { transform: scale(0.96); }
+.filter-btn.active {
+  background: var(--bg-badge);
+  color: var(--text);
+  border-color: #2a2a3e;
+}
+.filter-btn .dot {
+  display: inline-block;
+  width: 6px; height: 6px;
+  border-radius: 50%;
+  margin-right: 5px;
+  vertical-align: middle;
+}
+
+/* Date selector */
+.date-bar {
+  display: flex; align-items: center; gap: 8px;
+  padding: 6px 16px 10px;
+  font-family: var(--mono);
+  font-size: 0.7rem;
+  color: var(--text-3);
+}
+.date-bar input[type="date"] {
+  background: var(--bg-card);
+  border: 1px solid var(--border);
+  border-radius: 4px;
+  color: var(--text-2);
+  font-family: var(--mono);
+  font-size: 0.7rem;
+  padding: 4px 8px;
+  outline: none;
+}
+.date-bar input[type="date"]::-webkit-calendar-picker-indicator {
+  filter: invert(0.6);
+}
+.live-dot {
+  width: 6px; height: 6px;
+  border-radius: 50%;
+  background: var(--green);
+  animation: pulse 2s ease infinite;
+}
+@keyframes pulse {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0.3; }
+}
+
+/* Entry list */
+.entries {
+  padding: 0 12px 80px;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+/* Entry card */
+.entry {
+  background: var(--bg-card);
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  padding: 10px 12px;
+  transition: background 120ms ease;
+  cursor: pointer;
+  -webkit-tap-highlight-color: transparent;
+}
+.entry:active { background: var(--bg-card-hover); }
+.entry.expanded { background: var(--bg-card-hover); }
+
+.entry-header {
+  display: flex; align-items: center; gap: 8px;
+  margin-bottom: 4px;
+}
+.entry-type {
+  font-family: var(--mono);
+  font-size: 0.62rem;
+  font-weight: 600;
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
+  padding: 2px 6px;
+  border-radius: 3px;
+  flex-shrink: 0;
+}
+.type-ai-invoke   { background: #1a1a3a; color: var(--purple); }
+.type-ai-result   { background: #0a1a2a; color: var(--blue); }
+.type-headline    { background: #1a2a1a; color: var(--green); }
+.type-opportunity { background: #2a1a0a; color: var(--amber); }
+.type-velocity    { background: #2a0a1a; color: var(--red); }
+.type-error       { background: #2a0a0a; color: var(--red); }
+
+.entry-agent {
+  font-family: var(--mono);
+  font-size: 0.68rem;
+  color: var(--text-2);
+  flex: 1;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.entry-time {
+  font-family: var(--mono);
+  font-size: 0.62rem;
+  color: var(--text-3);
+  flex-shrink: 0;
+}
+
+.entry-summary {
+  font-size: 0.75rem;
+  color: var(--text-2);
+  line-height: 1.4;
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+}
+.entry-summary .ok { color: var(--green); }
+.entry-summary .fail { color: var(--red); }
+.entry-summary .val { color: var(--text); font-family: var(--mono); font-size: 0.68rem; }
+
+/* Expanded detail */
+.entry-detail {
+  display: none;
+  margin-top: 8px;
+  padding-top: 8px;
+  border-top: 1px solid var(--border);
+}
+.entry.expanded .entry-detail { display: block; }
+.entry.expanded .entry-summary {
+  -webkit-line-clamp: unset;
+}
+
+.detail-section {
+  margin-bottom: 8px;
+}
+.detail-label {
+  font-family: var(--mono);
+  font-size: 0.6rem;
+  font-weight: 600;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--text-3);
+  margin-bottom: 4px;
+}
+.detail-json {
+  font-family: var(--mono);
+  font-size: 0.65rem;
+  line-height: 1.5;
+  color: var(--text-2);
+  background: var(--bg);
+  border-radius: 4px;
+  padding: 8px;
+  overflow-x: auto;
+  -webkit-overflow-scrolling: touch;
+  white-space: pre-wrap;
+  word-break: break-all;
+  max-height: 300px;
+  overflow-y: auto;
+}
+
+/* Latency + status badges */
+.badge {
+  display: inline-block;
+  font-family: var(--mono);
+  font-size: 0.6rem;
+  font-weight: 500;
+  padding: 1px 5px;
+  border-radius: 3px;
+  margin-left: 6px;
+}
+.badge-ok { background: #0a2a0a; color: var(--green); }
+.badge-fail { background: #2a0a0a; color: var(--red); }
+.badge-latency { background: var(--bg-badge); color: var(--text-3); }
+
+/* Empty state */
+.empty {
+  text-align: center;
+  padding: 60px 20px;
+  color: var(--text-3);
+  font-family: var(--mono);
+  font-size: 0.75rem;
+}
+.empty-icon { font-size: 2rem; margin-bottom: 12px; opacity: 0.4; }
+
+/* Loading spinner */
+.loading {
+  text-align: center;
+  padding: 40px;
+  color: var(--text-3);
+  font-family: var(--mono);
+  font-size: 0.7rem;
+}
+
+/* Refresh button */
+.refresh-btn {
+  position: fixed;
+  bottom: 20px;
+  right: 20px;
+  width: 48px; height: 48px;
+  border-radius: 50%;
+  background: var(--bg-card);
+  border: 1px solid var(--border);
+  color: var(--text-2);
+  font-size: 1.2rem;
+  display: flex; align-items: center; justify-content: center;
+  cursor: pointer;
+  box-shadow: 0 4px 20px rgba(0,0,0,0.5);
+  transition: all 150ms ease;
+  z-index: 10;
+}
+.refresh-btn:active {
+  transform: scale(0.9);
+  background: var(--bg-card-hover);
+}
+.refresh-btn.spinning svg {
+  animation: spin 800ms linear infinite;
+}
+@keyframes spin {
+  from { transform: rotate(0deg); }
+  to { transform: rotate(360deg); }
+}
+
+/* Back link */
+.back-link {
+  font-family: var(--mono);
+  font-size: 0.7rem;
+  color: var(--text-3);
+  text-decoration: none;
+}
+.back-link:active { color: var(--text-2); }
+</style>
+</head>
+<body>
+
+<div class="header">
+  <div class="header-row">
+    <h1>ACTIVITY <span>LOG</span></h1>
+    <a href="/" class="back-link">&larr; dashboard</a>
+  </div>
+  <div class="header-stats" id="stats"></div>
+</div>
+
+<div class="date-bar">
+  <span class="live-dot" id="liveDot"></span>
+  <input type="date" id="datePicker">
+  <span id="dateLabel">today</span>
+</div>
+
+<div class="filters" id="filters">
+  <button class="filter-btn active" data-type="">All</button>
+  <button class="filter-btn" data-type="ai:invoke"><span class="dot" style="background:var(--purple)"></span>AI In</button>
+  <button class="filter-btn" data-type="ai:result"><span class="dot" style="background:var(--blue)"></span>AI Out</button>
+  <button class="filter-btn" data-type="headline:classified"><span class="dot" style="background:var(--green)"></span>Headlines</button>
+  <button class="filter-btn" data-type="opportunity:cycle"><span class="dot" style="background:var(--amber)"></span>Opps</button>
+  <button class="filter-btn" data-type="velocity:signal"><span class="dot" style="background:var(--red)"></span>Velocity</button>
+</div>
+
+<div class="entries" id="entries">
+  <div class="loading">loading...</div>
+</div>
+
+<button class="refresh-btn" id="refreshBtn" title="Refresh">
+  <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+    <polyline points="23 4 23 10 17 10"></polyline>
+    <path d="M20.49 15a9 9 0 1 1-2.12-9.36L23 10"></path>
+  </svg>
+</button>
+
+<script>
+const $ = s => document.querySelector(s);
+const $$ = s => document.querySelectorAll(s);
+
+let currentType = '';
+let isLive = true;
+
+const today = new Date().toISOString().slice(0, 10);
+$('#datePicker').value = today;
+
+function typeClass(type) {
+  const map = {
+    'ai:invoke': 'type-ai-invoke',
+    'ai:result': 'type-ai-result',
+    'headline:classified': 'type-headline',
+    'opportunity:cycle': 'type-opportunity',
+    'velocity:signal': 'type-velocity',
+    'system:error': 'type-error',
+  };
+  return map[type] || 'type-error';
+}
+
+function typeLabel(type) {
+  const map = {
+    'ai:invoke': 'AI IN',
+    'ai:result': 'AI OUT',
+    'headline:classified': 'HEADLINE',
+    'opportunity:cycle': 'OPP CYCLE',
+    'velocity:signal': 'VELOCITY',
+    'system:error': 'ERROR',
+  };
+  return map[type] || type;
+}
+
+function timeStr(ts) {
+  const d = new Date(ts);
+  return d.toLocaleTimeString('en-GB', { hour: '2-digit', minute: '2-digit', second: '2-digit' });
+}
+
+function summarize(entry) {
+  const { type, agent, ok, error, latencyMs, model, meta, output } = entry;
+
+  if (type === 'ai:invoke') {
+    const promptLen = meta?.systemPromptLength || '?';
+    return `<span class="val">${agent || '?'}</span> invoked — prompt ${promptLen} chars, timeout ${meta?.timeoutMs || '?'}ms`;
+  }
+
+  if (type === 'ai:result') {
+    const status = ok ? '<span class="ok">OK</span>' : `<span class="fail">FAIL</span> ${error || ''}`;
+    const lat = latencyMs ? ` — ${latencyMs}ms` : '';
+    const mdl = model ? ` [${model}]` : '';
+    return `<span class="val">${agent || '?'}</span> ${status}${lat}${mdl}`;
+  }
+
+  if (type === 'headline:classified') {
+    const imp = meta?.importance || '?';
+    const conf = meta?.confidence ?? '?';
+    const text = meta?.headlineText || '';
+    const truncated = text.length > 80 ? text.slice(0, 80) + '...' : text;
+    return `<span class="val">${imp}</span> (conf ${conf}) — ${truncated}`;
+  }
+
+  if (type === 'opportunity:cycle') {
+    const n = meta?.opportunityCount || 0;
+    const themes = meta?.themes?.join(', ') || 'none';
+    const reactive = meta?.reactiveTriggered ? ' [reactive]' : '';
+    return `<span class="val">${n} opps</span> — themes: ${themes}${reactive}`;
+  }
+
+  if (type === 'velocity:signal') {
+    const dir = meta?.direction === 'up' ? '↑' : '↓';
+    return `<span class="val">${meta?.displayName || meta?.pair}</span> ${dir} z=${meta?.zScore} | ${meta?.moveBps}${meta?.moveUnit} | ${meta?.severity}`;
+  }
+
+  return error || JSON.stringify(meta || {}).slice(0, 100);
+}
+
+function buildDetail(entry) {
+  let html = '';
+
+  if (entry.input) {
+    html += `<div class="detail-section"><div class="detail-label">Input Snapshot</div><div class="detail-json">${formatJSON(entry.input)}</div></div>`;
+  }
+  if (entry.output) {
+    html += `<div class="detail-section"><div class="detail-label">Output</div><div class="detail-json">${formatJSON(entry.output)}</div></div>`;
+  }
+  if (entry.meta) {
+    html += `<div class="detail-section"><div class="detail-label">Meta</div><div class="detail-json">${formatJSON(entry.meta)}</div></div>`;
+  }
+  if (entry.error) {
+    html += `<div class="detail-section"><div class="detail-label">Error</div><div class="detail-json" style="color:var(--red)">${esc(entry.error)}</div></div>`;
+  }
+
+  return html || '<div class="detail-json" style="color:var(--text-3)">No details</div>';
+}
+
+function formatJSON(obj) {
+  try {
+    return esc(JSON.stringify(obj, null, 2));
+  } catch {
+    return esc(String(obj));
+  }
+}
+
+function esc(s) {
+  const div = document.createElement('div');
+  div.textContent = s;
+  return div.innerHTML;
+}
+
+function renderEntries(entries) {
+  const container = $('#entries');
+  if (!entries.length) {
+    container.innerHTML = '<div class="empty"><div class="empty-icon">&#x1f4cb;</div>No activity logged yet.<br>Entries appear as AI agents run.</div>';
+    return;
+  }
+
+  container.innerHTML = entries.map((entry, i) => {
+    const okBadge = entry.ok === true ? '<span class="badge badge-ok">OK</span>'
+      : entry.ok === false ? '<span class="badge badge-fail">FAIL</span>' : '';
+    const latBadge = entry.latencyMs ? `<span class="badge badge-latency">${entry.latencyMs}ms</span>` : '';
+
+    return `
+      <div class="entry" data-idx="${i}">
+        <div class="entry-header">
+          <span class="entry-type ${typeClass(entry.type)}">${typeLabel(entry.type)}</span>
+          <span class="entry-agent">${esc(entry.agent || '')}${okBadge}${latBadge}</span>
+          <span class="entry-time">${timeStr(entry.timestamp)}</span>
+        </div>
+        <div class="entry-summary">${summarize(entry)}</div>
+        <div class="entry-detail">${buildDetail(entry)}</div>
+      </div>`;
+  }).join('');
+
+  // Toggle expand
+  container.querySelectorAll('.entry').forEach(el => {
+    el.addEventListener('click', () => el.classList.toggle('expanded'));
+  });
+}
+
+function updateStats(entries) {
+  const ai = entries.filter(e => e.type === 'ai:result');
+  const ok = ai.filter(e => e.ok).length;
+  const fail = ai.filter(e => !e.ok).length;
+  const headlines = entries.filter(e => e.type === 'headline:classified').length;
+  const opps = entries.filter(e => e.type === 'opportunity:cycle').length;
+  const vel = entries.filter(e => e.type === 'velocity:signal').length;
+  $('#stats').innerHTML = `<b>${entries.length}</b> entries · AI <b>${ok}</b>/<b>${ok + fail}</b> · Headlines <b>${headlines}</b> · Opp cycles <b>${opps}</b> · Signals <b>${vel}</b>`;
+}
+
+async function fetchEntries() {
+  const date = $('#datePicker').value;
+  isLive = date === today;
+  $('#liveDot').style.display = isLive ? 'block' : 'none';
+  $('#dateLabel').textContent = isLive ? 'today (live)' : date;
+
+  const btn = $('#refreshBtn');
+  btn.classList.add('spinning');
+
+  try {
+    let url;
+    if (isLive) {
+      url = '/api/activity-log?limit=200';
+      if (currentType) url += '&type=' + encodeURIComponent(currentType);
+    } else {
+      url = '/api/activity-log/day?date=' + date;
+      if (currentType) url += '&type=' + encodeURIComponent(currentType);
+    }
+
+    const res = await fetch(url);
+    const data = await res.json();
+    const entries = data.entries || [];
+    renderEntries(entries);
+    updateStats(isLive ? entries : entries);
+  } catch (err) {
+    $('#entries').innerHTML = `<div class="empty"><div class="empty-icon">&#x26a0;</div>Failed to load: ${esc(err.message)}</div>`;
+  } finally {
+    btn.classList.remove('spinning');
+  }
+}
+
+// Filter buttons
+$('#filters').addEventListener('click', e => {
+  const btn = e.target.closest('.filter-btn');
+  if (!btn) return;
+  $$('.filter-btn').forEach(b => b.classList.remove('active'));
+  btn.classList.add('active');
+  currentType = btn.dataset.type || '';
+  fetchEntries();
+});
+
+// Date picker
+$('#datePicker').addEventListener('change', () => fetchEntries());
+
+// Refresh button
+$('#refreshBtn').addEventListener('click', () => fetchEntries());
+
+// Auto-refresh when live
+setInterval(() => {
+  if (isLive && !document.hidden) fetchEntries();
+}, 30000);
+
+// Initial load
+fetchEntries();
+</script>
+</body>
+</html>

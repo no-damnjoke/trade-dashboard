@@ -2,6 +2,7 @@ import { addAlert } from './alertEngine.js';
 import { getRealtimeInstruments, type AssetClass, type MarketInstrument } from './instruments.js';
 import { isMockMarketDataEnabled } from './mockMarketData.js';
 import { getTradingViewQuote } from './tradingview.js';
+import { logActivity } from './activityLog.js';
 
 export interface PricePoint {
   price: number;
@@ -272,6 +273,23 @@ function processPrice(instrument: MarketInstrument, price: number): VelocitySign
   state.lastAlert = now;
   activeSignals.unshift(signal);
   pruneSignals();
+
+  logActivity({
+    timestamp: now,
+    type: 'velocity:signal',
+    meta: {
+      pair: signal.pair,
+      displayName: signal.displayName,
+      assetClass: signal.assetClass,
+      direction: signal.direction,
+      severity: signal.severity,
+      zScore: signal.zScore,
+      velocity: signal.velocity,
+      acceleration: signal.acceleration,
+      moveBps: signal.moveBps,
+      moveUnit: signal.moveUnit,
+    },
+  });
 
   addAlert({
     type: 'price_shock',

@@ -16,6 +16,8 @@ import { pollVelocityMonitor } from './services/velocityMonitor.js';
 import { refreshContextBrief, getContextBrief } from './services/contextBrief.js';
 import { getAPILog, getAPIStats } from './services/apiTracker.js';
 import { writeDigest } from './services/dailyDigest.js';
+import { activityLogRouter } from './routes/activityLog.js';
+import { pruneOldLogs } from './services/activityLog.js';
 
 const app = express();
 const PORT = Number(process.env.PORT || 3001);
@@ -37,6 +39,7 @@ app.use('/api/setups', setupsRouter);
 app.use('/api/fx-setup', fxSetupRouter);
 app.use('/api/ai-status', aiStatusRouter);
 app.use('/api/market-state', marketStateRouter);
+app.use('/api/activity-log', activityLogRouter);
 
 if (ENABLE_DEV_ROUTES || NODE_ENV !== 'production') {
   app.use('/api/dev/mock-market', devMockMarketRouter);
@@ -57,6 +60,12 @@ app.get('/api/api-tracker', (_req, res) => {
 // Serve built frontend in production
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const distPath = path.join(__dirname, '..', 'dist');
+
+// Activity log viewer (standalone mobile-friendly page)
+app.get('/logs', (_req, res) => {
+  res.sendFile(path.join(__dirname, 'views', 'activityLog.html'));
+});
+
 app.use(express.static(distPath));
 app.get('*', (_req, res) => {
   res.sendFile(path.join(distPath, 'index.html'));
@@ -72,6 +81,10 @@ if (!DISABLE_VELOCITY_POLLING) {
 
 void refreshContextBrief();
 setInterval(() => void refreshContextBrief(), 6 * 60 * 60_000);
+
+// Prune old activity logs (keep 14 days)
+pruneOldLogs();
+setInterval(() => pruneOldLogs(), 24 * 60 * 60_000);
 
 // Daily digest — write at 22:00 UTC, reset session memory
 const DIGEST_HOUR_UTC = 22;

@@ -5,6 +5,7 @@ import { getLatestQuotes, getRegimeSnapshot } from './velocityMonitor.js';
 import { getWhaleSnapshot } from './polymarket.js';
 import { getContextBriefForAI } from './contextBrief.js';
 import { searchHeadline } from './braveSearch.js';
+import { logActivity } from './activityLog.js';
 
 export interface Headline {
   id: string;
@@ -387,6 +388,23 @@ async function enhanceWithAI(
     confidence: result.data.confidence,
     fallbackReason: undefined,
   };
+
+  logActivity({
+    timestamp: Date.now(),
+    type: 'headline:classified',
+    agent: 'headline-impact',
+    ok: true,
+    meta: {
+      headlineId: headline.id,
+      headlineText: headline.text,
+      importance: enhanced.importance,
+      actionability: enhanced.actionability,
+      confidence: enhanced.confidence,
+      thesisChange: enhanced.thesisChange,
+      affectedAssets: enhanced.affectedAssets,
+      whyItMatters: enhanced.whyItMatters,
+    },
+  });
 
   headlineAICache.set(headline.dedupeKey, {
     headline: enhanced,

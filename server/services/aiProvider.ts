@@ -109,6 +109,7 @@ let opportunityUsesFallback = false;
 let opportunityLastRateLimitAt = 0; // track when the current model was rate-limited
 
 import { trackRequest } from './apiTracker.js';
+import { logActivity } from './activityLog.js';
 
 let lastProviderError = '';
 let lastLatencyMs = 0;
@@ -286,6 +287,19 @@ export async function invokeAIAgent<T>(options: AIInvocationOptions): Promise<AI
   const timeoutMs = options.timeoutMs ?? DEFAULT_TIMEOUT_MS;
   const maxTokens = options.maxTokens ?? 2000;
 
+  // Log the AI invocation input
+  logActivity({
+    timestamp: Date.now(),
+    type: 'ai:invoke',
+    agent: options.agent,
+    input: options.userPayload,
+    meta: {
+      systemPromptLength: options.systemPrompt.length,
+      timeoutMs: timeoutMs,
+      maxTokens: maxTokens,
+    },
+  });
+
   for (let attempt = 0; attempt <= maxRetries; attempt++) {
     const model = modelForAgent(options.agent);
     const reasoningEffort = reasoningEffortForAgent(options.agent);
@@ -388,13 +402,23 @@ export async function invokeAIAgent<T>(options: AIInvocationOptions): Promise<AI
         usageStats.totalSuccess += 1;
         usageStats.byAgent[options.agent].success += 1;
         usageStats.byAgent[options.agent].lastSuccessAt = Date.now();
+        const resultLatency = Date.now() - startedAt;
         pushRecent({
           agent: options.agent,
           model,
           ok: true,
           timestamp: Date.now(),
-          latencyMs: Date.now() - startedAt,
+          latencyMs: resultLatency,
           statusCode: response.status,
+        });
+        logActivity({
+          timestamp: Date.now(),
+          type: 'ai:result',
+          agent: options.agent,
+          model,
+          latencyMs: resultLatency,
+          ok: true,
+          output: parsed,
         });
         return { ok: true, data: parsed };
       } catch (error) {
@@ -434,5 +458,12 @@ export async function invokeAIAgent<T>(options: AIInvocationOptions): Promise<AI
     }
   }
 
+  logActivity({
+    timestamp: Date.now(),
+    type: 'ai:result',
+    agent: options.agent,
+    ok: false,
+    error: lastProviderError || `${options.agent} failed`,
+  });
   return { ok: false, error: lastProviderError || `${options.agent} failed` };
 }

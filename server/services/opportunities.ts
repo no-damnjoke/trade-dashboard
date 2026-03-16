@@ -9,6 +9,7 @@ import { getRegimeSnapshot } from './velocityMonitor.js';
 import { getContextBriefForAI } from './contextBrief.js';
 import { recordCycle, updateLevelTests, buildSessionContext } from './opportunityMemory.js';
 import { loadYesterdayDigest } from './dailyDigest.js';
+import { logActivity } from './activityLog.js';
 
 export interface OpportunityConflict {
   instrument: string;
@@ -414,6 +415,30 @@ export async function refreshOpportunityBoard(): Promise<void> {
         keyLevels: opp.keyLevels,
       })),
     );
+    logActivity({
+      timestamp: Date.now(),
+      type: 'opportunity:cycle',
+      agent: 'opportunity-ranker',
+      ok: true,
+      meta: {
+        narrative: cachedNarrative,
+        themes: cachedThemes,
+        opportunityCount: aiOpportunities.length,
+        opportunities: aiOpportunities.map(o => ({
+          id: o.id,
+          instrument: o.instrument,
+          direction: o.directionBias,
+          score: o.score,
+          confidence: o.confidence,
+          urgency: o.urgency,
+          theme: o.theme,
+          keyLevels: o.keyLevels,
+        })),
+        conflictCount: cachedConflicts.length,
+        candidateCount: snapshot.candidates.length,
+        reactiveTriggered: reactiveChanged,
+      },
+    });
   } else {
     const activeAIOpportunities = getActiveCachedAIOpportunities();
     cachedOpportunities = activeAIOpportunities.length > 0 ? activeAIOpportunities : [];
