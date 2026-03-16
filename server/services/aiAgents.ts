@@ -772,7 +772,7 @@ export async function evaluateOpportunities(snapshot: OpportunitySnapshot) {
     agent: 'opportunity-ranker',
     systemPrompt,
     userPayload: snapshot,
-    timeoutMs: 45_000,
+    timeoutMs: 90_000,
     maxTokens: 3000,
   });
 
