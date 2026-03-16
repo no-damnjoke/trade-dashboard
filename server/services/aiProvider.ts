@@ -70,9 +70,30 @@ const AI_BASE_URL = (
   'http://127.0.0.1:8765/v1'
 ).replace(/\/$/, '');
 const AI_API_KEY = process.env.AI_BRIDGE_API_KEY || process.env.LOCAL_AI_API_KEY || process.env.OPENAI_API_KEY || '';
-const HEADLINE_IMPACT_MODEL = process.env.AI_HEADLINE_MODEL || 'gpt-5.1-codex-mini';
-const FX_SETUP_MODEL = process.env.AI_FX_SETUP_MODEL || 'gpt-5.1-codex-mini';
+const HEADLINE_IMPACT_MODEL = process.env.AI_HEADLINE_MODEL || 'claude-haiku-4-5-20251001';
+const FX_SETUP_MODEL = process.env.AI_FX_SETUP_MODEL || 'minimax/minimax-m2.5';
 const OPPORTUNITY_RANKER_MODEL = process.env.AI_OPPORTUNITY_MODEL || 'gpt-5.2';
+
+// Per-agent endpoint overrides (base URL + API key)
+const AGENT_ENDPOINTS: Partial<Record<AIAgentId, { baseUrl: string; apiKey: string }>> = {};
+if (process.env.AI_FX_SETUP_BASE_URL) {
+  AGENT_ENDPOINTS['fx-setup'] = {
+    baseUrl: process.env.AI_FX_SETUP_BASE_URL.replace(/\/$/, ''),
+    apiKey: process.env.AI_FX_SETUP_API_KEY || '',
+  };
+}
+if (process.env.AI_HEADLINE_BASE_URL) {
+  AGENT_ENDPOINTS['headline-impact'] = {
+    baseUrl: process.env.AI_HEADLINE_BASE_URL.replace(/\/$/, ''),
+    apiKey: process.env.AI_HEADLINE_API_KEY || '',
+  };
+}
+if (process.env.AI_OPPORTUNITY_BASE_URL) {
+  AGENT_ENDPOINTS['opportunity-ranker'] = {
+    baseUrl: process.env.AI_OPPORTUNITY_BASE_URL.replace(/\/$/, ''),
+    apiKey: process.env.AI_OPPORTUNITY_API_KEY || '',
+  };
+}
 
 const HEADLINE_REASONING_EFFORT = process.env.AI_HEADLINE_REASONING_EFFORT || 'low';
 const FX_SETUP_REASONING_EFFORT = process.env.AI_FX_SETUP_REASONING_EFFORT || 'medium';
@@ -196,6 +217,14 @@ function reasoningEffortForAgent(agent: AIAgentId) {
   }
 }
 
+function endpointForAgent(agent: AIAgentId) {
+  const override = AGENT_ENDPOINTS[agent];
+  return {
+    baseUrl: override?.baseUrl || AI_BASE_URL,
+    apiKey: override?.apiKey || AI_API_KEY,
+  };
+}
+
 function supportsReasoningEffort(model: string) {
   return model.startsWith('gpt-');
 }
@@ -242,6 +271,7 @@ export async function invokeAIAgent<T>(options: AIInvocationOptions): Promise<AI
 
   const model = modelForAgent(options.agent);
   const reasoningEffort = reasoningEffortForAgent(options.agent);
+  const { baseUrl, apiKey } = endpointForAgent(options.agent);
   const maxRetries = options.maxRetries ?? DEFAULT_MAX_RETRIES;
   const timeoutMs = options.timeoutMs ?? DEFAULT_TIMEOUT_MS;
   const maxTokens = options.maxTokens ?? 2000;
@@ -257,11 +287,11 @@ export async function invokeAIAgent<T>(options: AIInvocationOptions): Promise<AI
     const startedAt = Date.now();
 
     try {
-      const response = await fetch(`${AI_BASE_URL}/chat/completions`, {
+      const response = await fetch(`${baseUrl}/chat/completions`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
-          ...(AI_API_KEY ? { Authorization: `Bearer ${AI_API_KEY}` } : {}),
+          ...(apiKey ? { Authorization: `Bearer ${apiKey}` } : {}),
         },
         body: JSON.stringify({
           model,
