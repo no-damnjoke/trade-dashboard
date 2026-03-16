@@ -188,7 +188,7 @@ async function buildFXSetupSnapshot(context: FXSetupContext): Promise<FXSetupSna
   const mockMode = isMockMarketDataEnabled();
   const ranges = mockMode
     ? { '60': 36, '15': 48, '5': 72 }
-    : { '60': 80, '15': 100, '5': 120 };
+    : { '60': 30, '15': 30, '5': 30 };
 
   const pairs = await Promise.all(selectedPairs.map(async pair => {
     const [candles60, candles15, candles5] = await Promise.all([
@@ -213,7 +213,7 @@ async function buildFXSetupSnapshot(context: FXSetupContext): Promise<FXSetupSna
         : null,
       timeframes: {
         '60': {
-          candles: candles60,
+          candles: candles60.map(c => ({ o: c.open, h: c.high, l: c.low, c: c.close })),
           indicators: {
             ema20: computeEMA(candles60, 20),
             ema50: computeEMA(candles60, 50),
@@ -222,7 +222,7 @@ async function buildFXSetupSnapshot(context: FXSetupContext): Promise<FXSetupSna
           },
         },
         '15': {
-          candles: candles15,
+          candles: candles15.map(c => ({ o: c.open, h: c.high, l: c.low, c: c.close })),
           indicators: {
             ema20: computeEMA(candles15, 20),
             ema50: computeEMA(candles15, 50),
@@ -231,7 +231,7 @@ async function buildFXSetupSnapshot(context: FXSetupContext): Promise<FXSetupSna
           },
         },
         '5': {
-          candles: candles5,
+          candles: candles5.map(c => ({ o: c.open, h: c.high, l: c.low, c: c.close })),
           indicators: {
             ema20: computeEMA(candles5, 20),
             ema50: computeEMA(candles5, 50),
