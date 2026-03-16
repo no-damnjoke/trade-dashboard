@@ -71,7 +71,7 @@ const AI_BASE_URL = (
 ).replace(/\/$/, '');
 const AI_API_KEY = process.env.AI_BRIDGE_API_KEY || process.env.LOCAL_AI_API_KEY || process.env.OPENAI_API_KEY || '';
 const HEADLINE_IMPACT_MODEL = process.env.AI_HEADLINE_MODEL || 'claude-haiku-4-5-20251001';
-const FX_SETUP_MODEL = process.env.AI_FX_SETUP_MODEL || 'minimax/minimax-m2.5';
+const FX_SETUP_MODEL = process.env.AI_FX_SETUP_MODEL || 'claude-sonnet-4-5-20250514';
 const OPPORTUNITY_RANKER_MODEL = process.env.AI_OPPORTUNITY_MODEL || 'gpt-5.2';
 
 // Per-agent endpoint overrides (base URL + API key)
