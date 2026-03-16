@@ -102,10 +102,11 @@ const OPPORTUNITY_REASONING_EFFORT = process.env.AI_OPPORTUNITY_REASONING_EFFORT
 const DEFAULT_TIMEOUT_MS = Number(process.env.AI_TIMEOUT_MS || 12_000);
 const DEFAULT_MAX_RETRIES = Number(process.env.AI_MAX_RETRIES || 1);
 
-// Opportunity-ranker model rotation: primary ↔ fallback on 429
+// Opportunity-ranker model rotation: primary ↔ fallback on rate limit
 const OPPORTUNITY_PRIMARY_MODEL = OPPORTUNITY_RANKER_MODEL;
 const OPPORTUNITY_FALLBACK_MODEL = process.env.AI_OPPORTUNITY_FALLBACK_MODEL || 'claude-sonnet-4-6';
 let opportunityUsesFallback = false;
+let opportunityLastRateLimitAt = 0; // track when the current model was rate-limited
 
 import { trackRequest } from './apiTracker.js';
 
@@ -206,8 +207,14 @@ function modelForAgent(agent: AIAgentId) {
       return HEADLINE_IMPACT_MODEL;
     case 'fx-setup':
       return FX_SETUP_MODEL;
-    case 'opportunity-ranker':
+    case 'opportunity-ranker': {
+      // If rate-limited within last 5 min, try swapping back to primary
+      if (opportunityUsesFallback && opportunityLastRateLimitAt > 0 && Date.now() - opportunityLastRateLimitAt > 5 * 60_000) {
+        opportunityUsesFallback = false;
+        console.log(`[AI] opportunity-ranker cooldown expired, trying primary ${OPPORTUNITY_PRIMARY_MODEL} again`);
+      }
       return opportunityUsesFallback ? OPPORTUNITY_FALLBACK_MODEL : OPPORTUNITY_PRIMARY_MODEL;
+    }
   }
 }
 
@@ -338,12 +345,18 @@ export async function invokeAIAgent<T>(options: AIInvocationOptions): Promise<AI
           statusCode: response.status,
           error: lastProviderError,
         });
-        if (response.status === 429) {
+        if (response.status === 429 || response.status === 529) {
           if (options.agent === 'opportunity-ranker') {
-            opportunityUsesFallback = !opportunityUsesFallback;
-            const swappedTo = opportunityUsesFallback ? OPPORTUNITY_FALLBACK_MODEL : OPPORTUNITY_PRIMARY_MODEL;
-            console.log(`[AI] opportunity-ranker 429 on ${model}, rotating to ${swappedTo}`);
-            continue; // retry with the swapped model
+            // Only swap once per call — don't toggle back if both models are limited
+            if (attempt === 0) {
+              opportunityUsesFallback = !opportunityUsesFallback;
+              opportunityLastRateLimitAt = Date.now();
+              const swappedTo = modelForAgent('opportunity-ranker');
+              console.log(`[AI] opportunity-ranker ${response.status} on ${model}, rotating to ${swappedTo}`);
+              continue; // retry with the swapped model
+            }
+            // Both models rate-limited — stay on the fallback for next cycle
+            console.log(`[AI] opportunity-ranker ${response.status} on both models, will retry next cycle with ${modelForAgent('opportunity-ranker')}`);
           }
           return { ok: false, error: lastProviderError };
         }
