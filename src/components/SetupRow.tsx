@@ -14,14 +14,11 @@ export function SetupRow({ setup }: { setup: TechnicalSetup }) {
   return (
     <div class={`setup-row setup-row--${setup.direction}`}>
       <div class="setup-row__header">
-        <span class="setup-row__type">{typeLabel}</span>
         <span class="setup-row__pair mono">{setup.pair}</span>
-        {setup.quality && <span class="setup-row__badge">{setup.quality}</span>}
         <span class={`setup-row__badge setup-row__badge--${setup.direction}`}>
           {setup.direction === 'long' ? '\u2191 Long' : '\u2193 Short'}
         </span>
-        <span class="setup-row__badge">AI</span>
-        <span class="setup-row__confidence mono">{setup.confidence}%</span>
+        <span class="setup-row__type">{typeLabel}</span>
         {setup.riskRewardRatio != null && (
           <span class="setup-row__rr">{setup.riskRewardRatio.toFixed(1)}R</span>
         )}

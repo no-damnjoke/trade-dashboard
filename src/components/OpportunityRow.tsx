@@ -46,33 +46,9 @@ export function OpportunityRow({ opportunity }: { opportunity: MarketOpportunity
         <span class={`opp-row__bias opp-row__bias--${opportunity.directionBias}`}>{biasLabel}</span>
       </div>
       <div class="opp-row__trigger">{detailText}</div>
-      {opportunity.keyLevels && (opportunity.keyLevels.support.length > 0 || opportunity.keyLevels.resistance.length > 0) && (
-        <div class="opp-row__levels">
-          {opportunity.keyLevels.support.length > 0 && (
-            <div class="opp-row__levels-group">
-              <span class="opp-row__levels-label">S</span>
-              {opportunity.keyLevels.support.map(l => (
-                <span key={l} class="opp-row__level opp-row__level--support mono">{l}</span>
-              ))}
-            </div>
-          )}
-          {opportunity.keyLevels.resistance.length > 0 && (
-            <div class="opp-row__levels-group">
-              <span class="opp-row__levels-label">R</span>
-              {opportunity.keyLevels.resistance.map(l => (
-                <span key={l} class="opp-row__level opp-row__level--resistance mono">{l}</span>
-              ))}
-            </div>
-          )}
-        </div>
-      )}
       <div class="opp-row__footer">
         <span class="opp-row__confirmation">{sourceSummary}</span>
         <span class="mono">{formatRelativeTime(opportunity.staleAfter)}</span>
-      </div>
-      <div class="opp-row__invalidation">
-        <span class="opp-row__label">Invalidation</span>
-        <span>{opportunity.invalidation}</span>
       </div>
     </div>
   );
