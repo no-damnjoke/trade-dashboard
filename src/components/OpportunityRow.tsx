@@ -10,22 +10,13 @@ const LABELS: Record<MarketOpportunity['setupType'], string> = {
   cross_asset_divergence: 'Divergence',
 };
 
-function getBiasLabel(opportunity: MarketOpportunity) {
-  if (opportunity.directionBias === 'long') return `Bullish ${opportunity.displayName}`;
-  if (opportunity.directionBias === 'short') return `Bearish ${opportunity.displayName}`;
-  return `Watch ${opportunity.displayName}`;
-}
-
 export function OpportunityRow({ opportunity }: { opportunity: MarketOpportunity }) {
-  const biasLabel = getBiasLabel(opportunity);
-  const sourceSummary = opportunity.sourceMix?.join(' + ') || opportunity.confirmationSignals[0] || '';
-  const detailText = opportunity.commentary || opportunity.trigger || sourceSummary;
+  const detailText = opportunity.commentary || opportunity.trigger || '';
 
   return (
     <div class={`opp-row opp-row--${opportunity.directionBias}`}>
       <div class="opp-row__header">
         <span class="opp-row__name">{opportunity.displayName}</span>
-        <span class="opp-row__signal">AI</span>
         {typeof opportunity.confidence === 'number' && (
           <span class="opp-row__signal">{opportunity.confidence}%</span>
         )}
@@ -33,21 +24,16 @@ export function OpportunityRow({ opportunity }: { opportunity: MarketOpportunity
         {opportunity.theme && (
           <span class="opp-row__theme">{opportunity.theme}</span>
         )}
-        {opportunity.isSynthetic && (
-          <span class="opp-row__signal opp-row__signal--synth">Synth</span>
-        )}
-        {opportunity.conflictFlag && (
-          <span class="opp-row__signal opp-row__signal--conflict" title={opportunity.conflictFlag}>!</span>
-        )}
       </div>
       <div class="opp-row__meta">
-        <span class="opp-row__type">{LABELS[opportunity.setupType]}</span>
         <span class="opp-row__instrument mono">{opportunity.instrument}</span>
-        <span class={`opp-row__bias opp-row__bias--${opportunity.directionBias}`}>{biasLabel}</span>
+        <span class={`opp-row__bias opp-row__bias--${opportunity.directionBias}`}>
+          {opportunity.directionBias === 'long' ? 'Bullish' : opportunity.directionBias === 'short' ? 'Bearish' : 'Watch'}
+        </span>
+        <span class="opp-row__type">{LABELS[opportunity.setupType]}</span>
       </div>
       <div class="opp-row__trigger">{detailText}</div>
       <div class="opp-row__footer">
-        <span class="opp-row__confirmation">{sourceSummary}</span>
         <span class="mono">{formatRelativeTime(opportunity.staleAfter)}</span>
       </div>
     </div>
