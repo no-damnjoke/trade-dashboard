@@ -52,7 +52,8 @@ let lastRefresh = 0;
 let lastAITriggeredAt = 0;
 const OPPORTUNITY_REFRESH_TTL_MS = 60_000;
 const OPPORTUNITY_AI_CACHE_TTL_MS = 10 * 60_000;
-const OPPORTUNITY_AI_MIN_INTERVAL_MS = 10 * 60_000;
+const OPPORTUNITY_AI_STEADY_INTERVAL_MS = 10 * 60_000;
+const OPPORTUNITY_AI_REACTIVE_INTERVAL_MS = 3 * 60_000;
 let lastAISignature = '';
 
 function getActiveCachedAIOpportunities() {
@@ -271,12 +272,23 @@ export async function refreshOpportunityBoard(): Promise<void> {
     return;
   }
 
-  if (cachedOpportunities.length > 0 && aiSignature === lastAISignature && Date.now() - lastRefresh < OPPORTUNITY_AI_CACHE_TTL_MS) {
-    return;
-  }
+  const signatureChanged = aiSignature !== lastAISignature;
+  const timeSinceLastAI = lastAITriggeredAt > 0 ? Date.now() - lastAITriggeredAt : Infinity;
 
-  if (lastAITriggeredAt > 0 && Date.now() - lastAITriggeredAt < OPPORTUNITY_AI_MIN_INTERVAL_MS) {
-    return;
+  // Two-tier gating: 3min floor when new data arrives, 10min steady state
+  if (signatureChanged) {
+    // New candidates/regime/heatmap — react faster, but enforce 3min floor
+    if (timeSinceLastAI < OPPORTUNITY_AI_REACTIVE_INTERVAL_MS) {
+      return;
+    }
+  } else {
+    // Nothing changed — only re-evaluate on the 10min steady cycle
+    if (cachedOpportunities.length > 0 && Date.now() - lastRefresh < OPPORTUNITY_AI_CACHE_TTL_MS) {
+      return;
+    }
+    if (timeSinceLastAI < OPPORTUNITY_AI_STEADY_INTERVAL_MS) {
+      return;
+    }
   }
 
   lastAITriggeredAt = Date.now();
