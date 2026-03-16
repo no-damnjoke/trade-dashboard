@@ -577,8 +577,8 @@ export async function evaluateFXSetups(snapshot: FXSetupSnapshot) {
     agent: 'fx-setup',
     systemPrompt,
     userPayload: snapshot,
-    timeoutMs: 20_000,
-    maxTokens: 1000,
+    timeoutMs: 45_000,
+    maxTokens: 2000,
   });
 
   if (!result.ok || !result.data || !Array.isArray(result.data.setups)) {
@@ -701,6 +701,7 @@ export async function evaluateOpportunities(snapshot: OpportunitySnapshot) {
     '   - Each conflict needs: instrument, description, sources array, and recommendation ("watch", "fade", or "wait").',
     '   - For instrument, use a readable label like "USD Regime", "DXY", or the pair name. Do not use camelCase or internal field names.',
     '   - Also set conflictFlag on the relevant opportunity object with a short description.',
+    '   - Be precise about conflicts: JPY strength during risk-on is NOT a conflict — JPY can strengthen on carry unwind while risk appetite is broad. Only flag genuine contradictions.',
     '',
     'Keep commentary concise: at most 2 short sentences, ideally under 35 words total.',
     'No article-style commentary, no macro recap, no repeated background context.',
