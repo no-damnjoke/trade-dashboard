@@ -55,6 +55,7 @@ const OPPORTUNITY_AI_CACHE_TTL_MS = 10 * 60_000;
 const OPPORTUNITY_AI_STEADY_INTERVAL_MS = 10 * 60_000;
 const OPPORTUNITY_AI_REACTIVE_INTERVAL_MS = 3 * 60_000;
 let lastAISignature = '';
+let lastReactiveSignature = '';
 
 function getActiveCachedAIOpportunities() {
   const now = Date.now();
@@ -179,12 +180,32 @@ function shouldUseOpportunityAI(snapshot: OpportunitySnapshot) {
 }
 
 function buildAISignature(snapshot: OpportunitySnapshot) {
-  // Only track structural changes that warrant a reactive AI call.
-  // Ignore: score fluctuations, candidate reordering, minor heatmap drift.
+  // Full signature — used for steady-state cache invalidation.
+  // Tracks all candidate IDs so the 10-min cycle re-evaluates when inputs change.
   return JSON.stringify({
     regime: snapshot.regime.usdBias,
     candidateIds: snapshot.candidates.slice(0, 12).map(c => c.id).sort(),
     heatmapDirection: snapshot.heatmap.dominantDirection,
+  });
+}
+
+function buildReactiveSignature(snapshot: OpportunitySnapshot) {
+  // Narrow signature — only changes that justify a reactive 3-min AI call.
+  // Critical headlines, regime flips, heatmap direction flips, new FX setups/whales.
+  // Medium/high headlines and score changes do NOT trigger reactive calls.
+  const criticalHeadlineIds = snapshot.candidates
+    .filter(c => c.sourceType === 'headline' && c.supportingFactors.some(f => f.includes('critical')))
+    .map(c => c.id)
+    .sort();
+  const nonHeadlineIds = snapshot.candidates
+    .filter(c => c.sourceType !== 'headline')
+    .map(c => c.id)
+    .sort();
+  return JSON.stringify({
+    regime: snapshot.regime.usdBias,
+    heatmapDirection: snapshot.heatmap.dominantDirection,
+    criticalHeadlineIds,
+    nonHeadlineIds,
   });
 }
 
@@ -268,17 +289,18 @@ export async function refreshOpportunityBoard(): Promise<void> {
     return;
   }
 
-  const signatureChanged = aiSignature !== lastAISignature;
+  const reactiveSignature = buildReactiveSignature(snapshot);
+  const reactiveChanged = reactiveSignature !== lastReactiveSignature;
   const timeSinceLastAI = lastAITriggeredAt > 0 ? Date.now() - lastAITriggeredAt : Infinity;
 
-  // Two-tier gating: 3min floor when new data arrives, 10min steady state
-  if (signatureChanged) {
-    // New candidates/regime/heatmap — react faster, but enforce 3min floor
+  // Two-tier gating:
+  // - Reactive (3min floor): only for critical headlines, new setups/whales, regime/direction flips
+  // - Steady (10min): regular re-evaluation when anything changed or cache is stale
+  if (reactiveChanged) {
     if (timeSinceLastAI < OPPORTUNITY_AI_REACTIVE_INTERVAL_MS) {
       return;
     }
   } else {
-    // Nothing changed — only re-evaluate on the 10min steady cycle
     if (cachedOpportunities.length > 0 && Date.now() - lastRefresh < OPPORTUNITY_AI_CACHE_TTL_MS) {
       return;
     }
@@ -296,6 +318,7 @@ export async function refreshOpportunityBoard(): Promise<void> {
     cachedOpportunities = activeAIOpportunities.length > 0 ? activeAIOpportunities : [];
     if (activeAIOpportunities.length === 0) clearAIInsights();
     lastAISignature = aiSignature;
+    lastReactiveSignature = reactiveSignature;
     lastRefresh = Date.now();
     return;
   }
