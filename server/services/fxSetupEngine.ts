@@ -44,9 +44,9 @@ export interface FXSetupContext {
   signals: VelocitySignal[];
 }
 
-const FX_SETUP_REFRESH_TTL_MS = 10 * 60_000;
-const FX_SETUP_AI_MIN_INTERVAL_MS = 10 * 60_000;
-const FX_SETUP_AI_CACHE_TTL_MS = 10 * 60_000;
+const FX_SETUP_REFRESH_TTL_MS = 30_000;
+const FX_SETUP_AI_MIN_INTERVAL_MS = 5 * 60_000;
+const FX_SETUP_AI_CACHE_TTL_MS = 5 * 60_000;
 let cachedContext: FXSetupContext = {
   timestamp: 0,
   session: 'closed',

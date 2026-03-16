@@ -19,7 +19,7 @@ if (!DISABLE_FX_SETUP_POLLING) {
   refreshSetups();
   setInterval(() => {
     void refreshSetups();
-  }, 10 * 60_000);
+  }, 5 * 60_000);
 }
 
 fxSetupRouter.get('/', (_req, res) => {
