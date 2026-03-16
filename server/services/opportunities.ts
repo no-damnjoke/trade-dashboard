@@ -312,7 +312,7 @@ export async function refreshOpportunityBoard(): Promise<void> {
 
   lastAITriggeredAt = Date.now();
   const result = await evaluateOpportunities(snapshot);
-  const minConfidence = Number(process.env.AI_OPPORTUNITY_MIN_CONFIDENCE || 60);
+  const minConfidence = Number(process.env.AI_OPPORTUNITY_MIN_CONFIDENCE || 50);
 
   if (!result.ok || !result.data) {
     const activeAIOpportunities = getActiveCachedAIOpportunities();

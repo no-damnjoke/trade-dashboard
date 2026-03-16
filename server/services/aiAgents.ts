@@ -750,7 +750,7 @@ export async function evaluateOpportunities(snapshot: OpportunitySnapshot) {
     'SESSION LEARNING: If session context shows your prior levels held or broke, acknowledge this. Build on what worked. Drop what faded. Your narrative should compound, not restart.',
     '',
     'REQUIRED FIELDS per opportunity: candidateId, title, instrument, direction ("long"/"short"/"neutral" — NOT "buy"/"sell"), score (0-100), urgency, commentary, supportingFactors, invalidation, staleAfter (epoch ms), sourceMix, confidence (0-100), classificationMethod ("ai"), theme, keyLevels.',
-    'You MUST set confidence as a number 0-100 on every opportunity. Do NOT omit it.',
+    'You MUST set confidence as a number 0-100 on every opportunity. Do NOT omit it. Use the full range: 60-75 for reasonable setups, 75-90 for strong conviction. Below 50 means you should not include it.',
     'PREFER existing candidate IDs from the provided data over creating synthetics. Only use synth-N when no existing candidate covers the thesis.',
     '',
     'Return strict JSON: { "narrative": "...", "themes": ["..."], "opportunities": [...], "conflicts": [...] }',
