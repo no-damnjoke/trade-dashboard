@@ -398,7 +398,7 @@ export async function refreshOpportunityBoard(): Promise<void> {
         theme: typeof item.theme === 'string' ? item.theme : undefined,
         isSynthetic: isSynthetic || undefined,
         conflictFlag: typeof item.conflictFlag === 'string' ? item.conflictFlag : undefined,
-        keyLevels: item.keyLevels,
+        keyLevels: (!isSynthetic && candidate?.sourceType === 'fx_setup') ? item.keyLevels : undefined,
       }];
     })
     .slice(0, 12);
