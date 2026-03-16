@@ -3,6 +3,7 @@ import { getRealtimeInstruments, type AssetClass, type MarketInstrument } from '
 import { isMockMarketDataEnabled } from './mockMarketData.js';
 import { getTradingViewQuote } from './tradingview.js';
 import { logActivity } from './activityLog.js';
+import { getHeatmapStrengthSummary } from './heatmap.js';
 
 export interface PricePoint {
   price: number;
@@ -381,6 +382,15 @@ export function getMonitorStatus() {
 
 export function getRegimeSnapshot() {
   const signals = getActiveSignals();
+
+  // Heatmap-based regime (primary — always available from daily price changes)
+  const heatmap = getHeatmapStrengthSummary();
+  const heatmapBias: string =
+    heatmap.dominantDirection === 'usd_weak' ? 'weaker'
+    : heatmap.dominantDirection === 'usd_strong' ? 'stronger'
+    : 'mixed';
+
+  // Velocity-based regime (secondary — only active during shocks, 15min TTL)
   const usdUp = signals.filter(signal =>
     signal.assetClass === 'fx' &&
     signal.actionable &&
@@ -395,13 +405,19 @@ export function getRegimeSnapshot() {
       (!signal.pair.startsWith('USD') && signal.direction === 'up'))
   ).length;
 
+  const velocityBias = usdUp > usdDown ? 'stronger' : usdDown > usdUp ? 'weaker' : null;
+
+  // Use heatmap as baseline, velocity shocks override if active
+  const usdBias = velocityBias ?? heatmapBias;
+  const usdBreadth = heatmap.breadth;
+
   const cryptoImpulse = signals
     .filter(signal => signal.assetClass === 'crypto')
     .sort((left, right) => right.zScore - left.zScore)[0];
 
   return {
-    usdBias: usdUp > usdDown ? 'stronger' : usdDown > usdUp ? 'weaker' : 'mixed',
-    usdBreadth: Math.abs(usdUp - usdDown),
+    usdBias,
+    usdBreadth,
     topShock: signals[0] ?? null,
     cryptoImpulse: cryptoImpulse ?? null,
     updatedAt: Date.now(),
