@@ -102,6 +102,11 @@ const OPPORTUNITY_REASONING_EFFORT = process.env.AI_OPPORTUNITY_REASONING_EFFORT
 const DEFAULT_TIMEOUT_MS = Number(process.env.AI_TIMEOUT_MS || 12_000);
 const DEFAULT_MAX_RETRIES = Number(process.env.AI_MAX_RETRIES || 1);
 
+// Opportunity-ranker model rotation: primary ↔ fallback on 429
+const OPPORTUNITY_PRIMARY_MODEL = OPPORTUNITY_RANKER_MODEL;
+const OPPORTUNITY_FALLBACK_MODEL = process.env.AI_OPPORTUNITY_FALLBACK_MODEL || 'claude-sonnet-4-6';
+let opportunityUsesFallback = false;
+
 import { trackRequest } from './apiTracker.js';
 
 let lastProviderError = '';
@@ -202,7 +207,7 @@ function modelForAgent(agent: AIAgentId) {
     case 'fx-setup':
       return FX_SETUP_MODEL;
     case 'opportunity-ranker':
-      return OPPORTUNITY_RANKER_MODEL;
+      return opportunityUsesFallback ? OPPORTUNITY_FALLBACK_MODEL : OPPORTUNITY_PRIMARY_MODEL;
   }
 }
 
@@ -269,14 +274,14 @@ export async function invokeAIAgent<T>(options: AIInvocationOptions): Promise<AI
     return { ok: false, error: 'ai disabled' };
   }
 
-  const model = modelForAgent(options.agent);
-  const reasoningEffort = reasoningEffortForAgent(options.agent);
   const { baseUrl, apiKey } = endpointForAgent(options.agent);
   const maxRetries = options.maxRetries ?? DEFAULT_MAX_RETRIES;
   const timeoutMs = options.timeoutMs ?? DEFAULT_TIMEOUT_MS;
   const maxTokens = options.maxTokens ?? 2000;
 
   for (let attempt = 0; attempt <= maxRetries; attempt++) {
+    const model = modelForAgent(options.agent);
+    const reasoningEffort = reasoningEffortForAgent(options.agent);
     usageStats.totalRequests += 1;
     usageStats.byAgent[options.agent].requests += 1;
     usageStats.byAgent[options.agent].lastTriggeredAt = Date.now();
@@ -334,6 +339,12 @@ export async function invokeAIAgent<T>(options: AIInvocationOptions): Promise<AI
           error: lastProviderError,
         });
         if (response.status === 429) {
+          if (options.agent === 'opportunity-ranker') {
+            opportunityUsesFallback = !opportunityUsesFallback;
+            const swappedTo = opportunityUsesFallback ? OPPORTUNITY_FALLBACK_MODEL : OPPORTUNITY_PRIMARY_MODEL;
+            console.log(`[AI] opportunity-ranker 429 on ${model}, rotating to ${swappedTo}`);
+            continue; // retry with the swapped model
+          }
           return { ok: false, error: lastProviderError };
         }
         continue;
