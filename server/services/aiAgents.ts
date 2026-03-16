@@ -761,6 +761,13 @@ export async function evaluateOpportunities(snapshot: OpportunitySnapshot) {
     return { ok: false as const, error: result.error || 'opportunity ai failed' };
   }
 
+  console.log(`[Opportunities AI] narrative: ${(result.data.narrative || '').slice(0, 100)}`);
+  console.log(`[Opportunities AI] themes: ${JSON.stringify(result.data.themes)}`);
+  console.log(`[Opportunities AI] raw opportunities: ${result.data.opportunities.length}`);
+  for (const opp of result.data.opportunities.slice(0, 3)) {
+    console.log(`[Opportunities AI]   ${(opp as Record<string, unknown>).candidateId}: conf=${(opp as Record<string, unknown>).confidence} dir=${(opp as Record<string, unknown>).direction} title=${String((opp as Record<string, unknown>).title || '').slice(0, 60)}`);
+  }
+
   const opportunities = result.data.opportunities
     .map(item => normalizeOpportunityResult(item, candidateIds))
     .filter((item): item is AIOpportunityResult => !!item);
