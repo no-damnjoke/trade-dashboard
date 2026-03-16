@@ -6,6 +6,8 @@ import { getWhaleSnapshot } from './polymarket.js';
 import { getTechnicalSetups } from './setups.js';
 import { getRegimeSnapshot } from './velocityMonitor.js';
 import { getContextBriefForAI } from './contextBrief.js';
+import { recordCycle, updateLevelTests, buildSessionContext } from './opportunityMemory.js';
+import { loadYesterdayDigest } from './dailyDigest.js';
 
 export interface OpportunityConflict {
   instrument: string;
@@ -166,6 +168,8 @@ function buildOpportunitySnapshot(
     },
     candidates,
     contextBrief: getContextBriefForAI() ?? undefined,
+    sessionContext: buildSessionContext(),
+    priorDayContext: loadYesterdayDigest(),
   } as OpportunitySnapshot;
 }
 
@@ -254,6 +258,7 @@ function clearAIInsights() {
 }
 
 export async function refreshOpportunityBoard(): Promise<void> {
+  updateLevelTests();
   const headlinesBundle = getCachedHeadlinesBundle();
   const regime = getRegimeSnapshot();
   const snapshot = buildOpportunitySnapshot(headlinesBundle, regime);
@@ -348,6 +353,17 @@ export async function refreshOpportunityBoard(): Promise<void> {
 
   if (aiOpportunities.length > 0) {
     cachedOpportunities = aiOpportunities;
+    recordCycle(
+      cachedNarrative,
+      cachedThemes,
+      aiOpportunities.map(opp => ({
+        instrument: opp.instrument,
+        direction: opp.directionBias,
+        confidence: opp.confidence ?? 0,
+        invalidation: opp.invalidation,
+        keyLevels: opp.keyLevels,
+      })),
+    );
   } else {
     const activeAIOpportunities = getActiveCachedAIOpportunities();
     cachedOpportunities = activeAIOpportunities.length > 0 ? activeAIOpportunities : [];

@@ -15,6 +15,7 @@ import { marketStateRouter } from './routes/marketState.js';
 import { pollVelocityMonitor } from './services/velocityMonitor.js';
 import { refreshContextBrief, getContextBrief } from './services/contextBrief.js';
 import { getAPILog, getAPIStats } from './services/apiTracker.js';
+import { writeDigest } from './services/dailyDigest.js';
 
 const app = express();
 const PORT = Number(process.env.PORT || 3001);
@@ -71,6 +72,23 @@ if (!DISABLE_VELOCITY_POLLING) {
 
 void refreshContextBrief();
 setInterval(() => void refreshContextBrief(), 6 * 60 * 60_000);
+
+// Daily digest — write at 22:00 UTC, reset session memory
+const DIGEST_HOUR_UTC = 22;
+function scheduleNextDigest() {
+  const now = new Date();
+  const target = new Date(now);
+  target.setUTCHours(DIGEST_HOUR_UTC, 0, 0, 0);
+  if (target.getTime() <= now.getTime()) {
+    target.setUTCDate(target.getUTCDate() + 1);
+  }
+  const delay = target.getTime() - now.getTime();
+  setTimeout(() => {
+    writeDigest();
+    scheduleNextDigest();
+  }, delay);
+}
+scheduleNextDigest();
 
 app.listen(PORT, HOST, () => {
   console.log(`[BE] Market Monitor backend running on http://${HOST}:${PORT}`);
