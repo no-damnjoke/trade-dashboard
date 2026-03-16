@@ -111,6 +111,7 @@ export interface OpportunitySnapshot {
   provenance: { macro: 'deterministic'; headlines: 'ai'; fxSetups: 'ai'; whales: 'polymarket'; heatmap: 'tradingview' };
   regime: { usdBias: string; usdBreadth: number; leadPair: string | null };
   heatmap: {
+    convention?: string;
     entries: Array<{ currency: string; pair: string; changePercent: number }>;
     strengthening: string[];
     weakening: string[];
@@ -603,7 +604,7 @@ export async function evaluateFXSetups(snapshot: FXSetupSnapshot) {
     agent: 'fx-setup',
     systemPrompt,
     userPayload: snapshot,
-    timeoutMs: 90_000,
+    timeoutMs: 120_000,
     maxTokens: 2000,
   });
 
@@ -724,6 +725,8 @@ export async function evaluateOpportunities(snapshot: OpportunitySnapshot) {
     '- Prior day context (if available)',
     '',
     'CONTEXT PRIORITY: Live candidates, heatmap, and regime are most current. Session context shows prior calls. contextBrief is background (every 6h). Prior day is yesterday\'s digest. webSearch (if present) contains live web results for the current macro themes — use them to validate or enrich your narrative and identify drivers the other data sources may miss.',
+    '',
+    'HEATMAP CONVENTION: changePercent is CURRENCY strength vs USD, NOT the pair price change. Positive = currency strengthening vs USD. So JPY +0.34% means USDJPY is DOWN 0.34% (JPY bought, USD sold). EUR +0.53% means EURUSD is UP 0.53%. Do NOT invert this — "strengthening" currencies in the heatmap are gaining value against USD.',
     '',
     'YOUR TASKS:',
     '',

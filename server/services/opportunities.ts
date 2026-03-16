@@ -168,13 +168,14 @@ async function buildOpportunitySnapshot(
       leadPair: regime.topShock?.pair ?? null,
     },
     heatmap: {
+      convention: 'changePercent is the currency strength vs USD. Positive = currency strengthening (e.g. JPY +0.34% means USDJPY is DOWN 0.34%). Negative = currency weakening vs USD.',
       entries: heatmapData.entries.map(e => ({
         currency: e.currency,
         pair: e.pair,
         changePercent: e.changePercent,
       })),
       ...heatmapSummary,
-    },
+    } as OpportunitySnapshot['heatmap'],
     candidates,
     contextBrief: getContextBriefForAI() ?? undefined,
     sessionContext: buildSessionContext(),
