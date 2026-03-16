@@ -668,7 +668,9 @@ function normalizeOpportunityResult(value: unknown, candidateIds: Set<string>): 
     candidateId: typeof raw.candidateId === 'string' ? raw.candidateId : '',
     title: typeof raw.title === 'string' ? raw.title : '',
     instrument: typeof raw.instrument === 'string' ? raw.instrument : '',
-    direction: direction === 'long' || direction === 'short' || direction === 'neutral' ? direction : 'neutral',
+    direction: direction === 'long' || direction === 'buy' || direction === 'bullish' ? 'long'
+      : direction === 'short' || direction === 'sell' || direction === 'bearish' ? 'short'
+      : 'neutral',
     score: typeof raw.score === 'number' && Number.isFinite(raw.score) ? raw.score : 0,
     urgency: urgency === 'high' || urgency === 'medium' || urgency === 'low' ? urgency : 'low',
     commentary: typeof raw.commentary === 'string'
@@ -686,7 +688,7 @@ function normalizeOpportunityResult(value: unknown, candidateIds: Set<string>): 
       : Array.isArray(raw.source_mix)
         ? raw.source_mix.filter((item): item is string => typeof item === 'string')
       : [],
-    confidence: confidence ?? 0,
+    confidence: confidence ?? (urgency === 'high' ? 75 : urgency === 'medium' ? 65 : 55),
     classificationMethod: 'ai',
     theme: typeof raw.theme === 'string' ? raw.theme : undefined,
     isSynthetic: typeof raw.isSynthetic === 'boolean' ? raw.isSynthetic : (typeof raw.candidateId === 'string' && raw.candidateId.startsWith('synth-')) || undefined,
@@ -745,6 +747,10 @@ export async function evaluateOpportunities(snapshot: OpportunitySnapshot) {
     '   - JPY strength during risk-on is NOT a conflict — only flag genuine contradictions.',
     '',
     'SESSION LEARNING: If session context shows your prior levels held or broke, acknowledge this. Build on what worked. Drop what faded. Your narrative should compound, not restart.',
+    '',
+    'REQUIRED FIELDS per opportunity: candidateId, title, instrument, direction ("long"/"short"/"neutral" — NOT "buy"/"sell"), score (0-100), urgency, commentary, supportingFactors, invalidation, staleAfter (epoch ms), sourceMix, confidence (0-100), classificationMethod ("ai"), theme, keyLevels.',
+    'You MUST set confidence as a number 0-100 on every opportunity. Do NOT omit it.',
+    'PREFER existing candidate IDs from the provided data over creating synthetics. Only use synth-N when no existing candidate covers the thesis.',
     '',
     'Return strict JSON: { "narrative": "...", "themes": ["..."], "opportunities": [...], "conflicts": [...] }',
   ].join('\n');
