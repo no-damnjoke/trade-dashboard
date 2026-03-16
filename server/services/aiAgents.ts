@@ -767,15 +767,25 @@ export async function evaluateOpportunities(snapshot: OpportunitySnapshot) {
     return { ok: false as const, error: result.error || 'opportunity ai failed' };
   }
 
-  console.log(`[Opportunities AI] narrative: ${(result.data.narrative || '').slice(0, 100)}`);
+  console.log(`[Opportunities AI] narrative: ${(result.data.narrative || '').slice(0, 120)}`);
   console.log(`[Opportunities AI] themes: ${JSON.stringify(result.data.themes)}`);
   console.log(`[Opportunities AI] raw opportunities: ${result.data.opportunities.length}`);
   for (const opp of result.data.opportunities.slice(0, 3)) {
-    console.log(`[Opportunities AI]   ${(opp as Record<string, unknown>).candidateId}: conf=${(opp as Record<string, unknown>).confidence} dir=${(opp as Record<string, unknown>).direction} title=${String((opp as Record<string, unknown>).title || '').slice(0, 60)}`);
+    const r = opp as Record<string, unknown>;
+    console.log(`[Opportunities AI]   raw: ${JSON.stringify({ candidateId: r.candidateId, confidence: r.confidence, direction: r.direction, instrument: r.instrument, urgency: r.urgency, score: r.score })}`);
   }
 
   const opportunities = result.data.opportunities
-    .map(item => normalizeOpportunityResult(item, candidateIds))
+    .map((item, idx) => {
+      const normalized = normalizeOpportunityResult(item, candidateIds);
+      if (!normalized) {
+        const r = item as Record<string, unknown>;
+        console.log(`[Opportunities AI] normalization FAILED for [${idx}] candidateId=${r.candidateId} instrument=${r.instrument} direction=${r.direction} conf=${r.confidence}`);
+      } else {
+        console.log(`[Opportunities AI] normalized [${idx}]: ${normalized.candidateId} conf=${normalized.confidence} dir=${normalized.direction}`);
+      }
+      return normalized;
+    })
     .filter((item): item is AIOpportunityResult => !!item);
   if (opportunities.length === 0) {
     return { ok: false as const, error: 'opportunity ai validation failed' };
