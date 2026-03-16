@@ -12,8 +12,8 @@ Market Monitor pulls live prices for FX, crypto, rates, indices, and commodities
 |-------|-------------|
 | **Headlines** | Breaking news from Telegram (FirstSquawk) and Twitter/X with AI-scored market impact |
 | **Velocity / Macro Shocks** | Real-time velocity, acceleration, and z-score monitoring across instruments; alerts on unusual moves with per-instrument cooldowns |
-| **FX Setups** | AI-generated foreign exchange trade ideas with entry, target, stop, and confidence scores |
-| **Opportunities** | AI-ranked cross-asset trade opportunities combining headlines, velocity signals, and technicals |
+| **FX Setups** | AI-generated G10 FX trade ideas with entry, stop loss, targets, R:R ratio, and quality grades |
+| **Opportunities** | AI macro strategist board — level-aware narratives with key S/R levels, session memory feedback loop |
 | **Event Odds** | Polymarket prediction market data with whale tracking |
 | **Watchlist** | Configurable instrument watchlist with live prices |
 | **Calendar** | Upcoming macro events and economic data releases |
@@ -47,11 +47,19 @@ Frontend (Preact + Vite)         Backend (Express + TypeScript)
 
 | Agent | Default Model | Reasoning Effort | Purpose |
 |-------|--------------|-------------------|---------|
-| `headline-impact` | gpt-5.2-codex-mini | low | Scores headline market impact, identifies affected instruments |
-| `fx-setup` | gpt-5.2-codex-mini | medium | Generates FX trade setups with entry/target/stop/R:R levels |
+| `headline-impact` | gpt-5.1-codex-mini | low | Scores headline market impact, identifies affected instruments |
+| `fx-setup` | gpt-5.1-codex-mini | medium | Generates FX trade setups with entry, stop loss, targets, and R:R |
 | `opportunity-ranker` | gpt-5.2 | medium | Senior macro strategist — synthesizes narratives with session memory feedback loop |
 
-All agents use an OpenAI-compatible API interface and support three provider modes: `deterministic` (no AI, fallback output), `bridge-openai-compatible` (local proxy), and `official-openai-compatible` (direct API). When AI is disabled or fails, agents fall back to deterministic output.
+All agents use an OpenAI-compatible API interface. Three provider modes: `deterministic` (no AI), `bridge-openai-compatible` (local proxy), and `official-openai-compatible` (direct API). FX setups and opportunities are AI-only — no deterministic fallbacks. When AI is unavailable, the panels show a clean empty state instead of fake output.
+
+### Session Memory & Feedback Loop
+
+The opportunity-ranker agent compounds understanding across cycles:
+
+- **Session memory** (`opportunityMemory.ts`): Ring buffer of last 6 AI cycles (~1 hour at 10min intervals). Tracks which S/R levels held or broke, which themes persisted or faded. Each cycle, a compressed summary is injected into the AI prompt.
+- **Daily digest** (`dailyDigest.ts`): At 22:00 UTC, the session is summarized and written to `data/digests/YYYY-MM-DD.json`. The next morning's first cycle loads yesterday's digest for cross-day learning.
+- **Level tracking**: When the agent calls a support/resistance level, the system monitors whether price tests or breaks that level, feeding the result back in subsequent cycles.
 
 ### Context Brief
 
@@ -95,13 +103,13 @@ Create a `.env` file in the project root. All variables are optional unless note
 | `AI_PROVIDER` | AI provider mode: `deterministic`, `bridge-openai-compatible`, `official-openai-compatible` | `deterministic` |
 | `AI_BRIDGE_BASE_URL` | Base URL for the AI proxy | `http://127.0.0.1:8765/v1` |
 | `AI_BRIDGE_API_KEY` | API key for the AI proxy | (none) |
-| `AI_HEADLINE_MODEL` | Model for headline-impact agent | `gpt-5.2-codex-mini` |
-| `AI_FX_SETUP_MODEL` | Model for fx-setup agent | `gpt-5.2-codex-mini` |
+| `AI_HEADLINE_MODEL` | Model for headline-impact agent | `gpt-5.1-codex-mini` |
+| `AI_FX_SETUP_MODEL` | Model for fx-setup agent | `gpt-5.1-codex-mini` |
 | `AI_OPPORTUNITY_MODEL` | Model for opportunity-ranker agent | `gpt-5.2` |
 
 | `AI_HEADLINE_REASONING_EFFORT` | Reasoning effort for headline-impact | `low` |
 | `AI_FX_SETUP_REASONING_EFFORT` | Reasoning effort for fx-setup | `medium` |
-| `AI_OPPORTUNITY_REASONING_EFFORT` | Reasoning effort for opportunity-ranker | `low` |
+| `AI_OPPORTUNITY_REASONING_EFFORT` | Reasoning effort for opportunity-ranker | `medium` |
 
 | `AI_TIMEOUT_MS` | AI request timeout in milliseconds | `12000` |
 | `AI_MAX_RETRIES` | Max retry attempts per AI request | `1` |
