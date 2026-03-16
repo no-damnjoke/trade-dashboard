@@ -209,7 +209,7 @@ function modelForAgent(agent: AIAgentId) {
       return FX_SETUP_MODEL;
     case 'opportunity-ranker': {
       // If rate-limited within last 5 min, try swapping back to primary
-      if (opportunityUsesFallback && opportunityLastRateLimitAt > 0 && Date.now() - opportunityLastRateLimitAt > 5 * 60_000) {
+      if (opportunityUsesFallback && opportunityLastRateLimitAt > 0 && Date.now() - opportunityLastRateLimitAt > 5 * 3_600_000) {
         opportunityUsesFallback = false;
         console.log(`[AI] opportunity-ranker cooldown expired, trying primary ${OPPORTUNITY_PRIMARY_MODEL} again`);
       }
