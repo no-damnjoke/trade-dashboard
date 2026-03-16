@@ -179,16 +179,12 @@ function shouldUseOpportunityAI(snapshot: OpportunitySnapshot) {
 }
 
 function buildAISignature(snapshot: OpportunitySnapshot) {
+  // Only track structural changes that warrant a reactive AI call.
+  // Ignore: score fluctuations, candidate reordering, minor heatmap drift.
   return JSON.stringify({
-    regime: snapshot.regime,
+    regime: snapshot.regime.usdBias,
+    candidateIds: snapshot.candidates.slice(0, 12).map(c => c.id).sort(),
     heatmapDirection: snapshot.heatmap.dominantDirection,
-    heatmapBreadth: snapshot.heatmap.breadth,
-    candidates: snapshot.candidates.slice(0, 12).map(candidate => ({
-      id: candidate.id,
-      sourceType: candidate.sourceType,
-      baselineScore: candidate.baselineScore,
-      instrument: candidate.instrument,
-    })),
   });
 }
 
