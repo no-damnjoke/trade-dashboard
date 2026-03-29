@@ -15,16 +15,62 @@ export interface TradingViewQuote {
   updatedAt: number;
 }
 
-const client = new TradingView.Client({ server: 'widgetdata' });
-const quoteSession = new client.Session.Quote({
-  customFields: ['lp', 'bid', 'ask', 'prev_close_price', 'chp', 'current_session'],
-});
+const STALE_THRESHOLD_MS = 5 * 60_000; // 5 minutes without any update = stale
+const RECONNECT_DELAY_MS = 5_000;
+
+let client: any;
+let quoteSession: any;
+let lastDataReceived = Date.now();
 
 const marketListeners = new Map<string, any>();
+const subscribedSymbols = new Set<string>();
 const quotes = new Map<string, TradingViewQuote>();
 const pendingResolvers = new Map<string, Array<() => void>>();
 
-function ensureMarket(symbol: string) {
+function createClient() {
+  try {
+    if (client) {
+      try { client.end(); } catch { /* ignore */ }
+    }
+  } catch { /* ignore */ }
+
+  marketListeners.clear();
+
+  client = new TradingView.Client({ server: 'widgetdata' });
+  quoteSession = new client.Session.Quote({
+    customFields: ['lp', 'bid', 'ask', 'prev_close_price', 'chp', 'current_session'],
+  });
+
+  client.onDisconnected(() => {
+    console.log('[TradingView] disconnected, scheduling reconnect...');
+    scheduleReconnect();
+  });
+
+  client.onError((...args: unknown[]) => {
+    console.error('[TradingView] client error:', ...args);
+  });
+
+  // Re-subscribe all previously tracked symbols
+  for (const symbol of subscribedSymbols) {
+    attachMarket(symbol);
+  }
+
+  lastDataReceived = Date.now();
+  console.log('[TradingView] client connected, tracking', subscribedSymbols.size, 'symbols');
+}
+
+let reconnectTimer: ReturnType<typeof setTimeout> | null = null;
+
+function scheduleReconnect() {
+  if (reconnectTimer) return;
+  reconnectTimer = setTimeout(() => {
+    reconnectTimer = null;
+    console.log('[TradingView] reconnecting...');
+    createClient();
+  }, RECONNECT_DELAY_MS);
+}
+
+function attachMarket(symbol: string) {
   if (marketListeners.has(symbol)) return;
 
   const market = new quoteSession.Market(symbol);
@@ -32,6 +78,8 @@ function ensureMarket(symbol: string) {
     const prevClose = Number(data.prev_close_price || 0);
     const price = Number(data.lp || data.bid || data.ask || prevClose || 0);
     if (!price) return;
+
+    lastDataReceived = Date.now();
 
     const chp = Number(data.chp ?? (prevClose ? ((price - prevClose) / prevClose) * 100 : 0));
     quotes.set(symbol, {
@@ -53,6 +101,20 @@ function ensureMarket(symbol: string) {
   });
 
   marketListeners.set(symbol, market);
+}
+
+// Health check: if no data received for STALE_THRESHOLD_MS, reconnect
+setInterval(() => {
+  const staleness = Date.now() - lastDataReceived;
+  if (staleness > STALE_THRESHOLD_MS) {
+    console.log(`[TradingView] no data for ${Math.round(staleness / 1000)}s, forcing reconnect`);
+    scheduleReconnect();
+  }
+}, 60_000);
+
+function ensureMarket(symbol: string) {
+  subscribedSymbols.add(symbol);
+  attachMarket(symbol);
 }
 
 export async function getTradingViewQuote(symbol: string): Promise<TradingViewQuote | null> {
@@ -92,3 +154,6 @@ export async function getTradingViewQuotes(symbols: string[]): Promise<TradingVi
     .map(symbol => quotes.get(symbol))
     .filter((quote): quote is TradingViewQuote => !!quote);
 }
+
+// Initialize on module load
+createClient();

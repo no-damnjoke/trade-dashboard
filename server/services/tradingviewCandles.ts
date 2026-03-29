@@ -13,9 +13,43 @@ export interface Candle {
   volume: number;
 }
 
-const client = new TradingView.Client({ server: 'widgetdata' });
+const RECONNECT_DELAY_MS = 5_000;
 const CANDLE_CACHE_TTL_MS = 60_000;
 const candleCache = new Map<string, { candles: Candle[]; timestamp: number }>();
+
+let client: any;
+
+function createClient() {
+  try {
+    if (client) {
+      try { client.end(); } catch { /* ignore */ }
+    }
+  } catch { /* ignore */ }
+
+  client = new TradingView.Client({ server: 'widgetdata' });
+
+  client.onDisconnected(() => {
+    console.log('[TradingView Candles] disconnected, scheduling reconnect...');
+    scheduleReconnect();
+  });
+
+  client.onError((...args: unknown[]) => {
+    console.error('[TradingView Candles] client error:', ...args);
+  });
+
+  console.log('[TradingView Candles] client connected');
+}
+
+let reconnectTimer: ReturnType<typeof setTimeout> | null = null;
+
+function scheduleReconnect() {
+  if (reconnectTimer) return;
+  reconnectTimer = setTimeout(() => {
+    reconnectTimer = null;
+    console.log('[TradingView Candles] reconnecting...');
+    createClient();
+  }, RECONNECT_DELAY_MS);
+}
 
 function cacheKey(symbol: string, timeframe: string, range: number) {
   return `${symbol}:${timeframe}:${range}`;
@@ -37,6 +71,10 @@ export async function getTradingViewCandles(symbol: string, timeframe: string, r
     const chart = new client.Session.Chart();
     const timeout = setTimeout(() => {
       chart.delete();
+      // On timeout, try reconnecting in case the client is dead
+      if (!client.isOpen || !client.isOpen()) {
+        scheduleReconnect();
+      }
       reject(new Error(`candles timeout ${symbol} ${timeframe}`));
     }, 8_000);
 
@@ -75,3 +113,6 @@ export async function getTradingViewCandles(symbol: string, timeframe: string, r
   candleCache.set(key, { candles, timestamp: Date.now() });
   return candles;
 }
+
+// Initialize on module load
+createClient();
